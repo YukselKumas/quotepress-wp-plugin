@@ -10,6 +10,56 @@ class QuotePress_Settings {
         add_action( 'admin_init',            [ __CLASS__, 'save' ] );
         add_action( 'admin_post_qp_save_templates', [ __CLASS__, 'save_templates' ] );
         add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue' ] );
+        add_action( 'wp_dashboard_setup',   [ __CLASS__, 'register_dashboard_widget' ] );
+    }
+
+    /* ── Dashboard widget ──────────────────────────────────── */
+    public static function register_dashboard_widget() {
+        wp_add_dashboard_widget(
+            'quotepress_summary',
+            '📋 QuotePress – Teklif Özeti',
+            [ __CLASS__, 'render_dashboard_widget' ]
+        );
+    }
+
+    public static function render_dashboard_widget() {
+        global $wpdb;
+        $t       = QuotePress_Database::table();
+        $total   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" );
+        $pending = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE status=%s", 'pending' ) );
+        $quoted  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE status=%s", 'quoted' ) );
+        $won     = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE status=%s", 'won' ) );
+        $lost    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE status=%s", 'lost' ) );
+
+        $month_start = gmdate( 'Y-m-01 00:00:00' );
+        $this_month  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE created_at >= %s", $month_start ) );
+
+        $c = self::active_theme_colors();
+        $p = esc_attr( $c['primary'] );
+        ?>
+        <style>
+        #quotepress_summary .qpw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+        #quotepress_summary .qpw-stat{background:#f9f9f9;border:1px solid #eee;border-radius:6px;padding:10px 8px;text-align:center;}
+        #quotepress_summary .qpw-n{font-size:22px;font-weight:700;line-height:1.1;}
+        #quotepress_summary .qpw-l{font-size:11px;color:#aaa;margin-top:2px;}
+        #quotepress_summary .qpw-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;border-top:1px solid #f0f0f0;padding-top:10px;margin-top:4px;}
+        </style>
+        <div class="qpw-grid">
+            <div class="qpw-stat"><div class="qpw-n" style="color:<?php echo $p; ?>"><?php echo $total; ?></div><div class="qpw-l">Toplam Talep</div></div>
+            <div class="qpw-stat"><div class="qpw-n" style="color:#e65100"><?php echo $pending; ?></div><div class="qpw-l">Beklemede</div></div>
+            <div class="qpw-stat"><div class="qpw-n" style="color:<?php echo $p; ?>"><?php echo $quoted; ?></div><div class="qpw-l">Tekliflendirildi</div></div>
+            <div class="qpw-stat"><div class="qpw-n" style="color:#2e7d32">✓ <?php echo $won; ?></div><div class="qpw-l">Kabul Edildi</div></div>
+            <div class="qpw-stat"><div class="qpw-n" style="color:#c62828">✗ <?php echo $lost; ?></div><div class="qpw-l">Reddedildi</div></div>
+            <div class="qpw-stat"><div class="qpw-n" style="color:<?php echo $p; ?>"><?php echo $this_month; ?></div><div class="qpw-l">Bu Ay Yeni</div></div>
+        </div>
+        <div class="qpw-links">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-reports' ) ); ?>" style="color:<?php echo $p; ?>;font-weight:600;">📊 Raporlar →</a>
+            &nbsp;|&nbsp;
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-settings' ) ); ?>" style="color:#666;">⚙ Ayarlar</a>
+            &nbsp;|&nbsp;
+            <a href="<?php echo esc_url( home_url( '/' . self::get( 'panel_slug', 'quote-panel' ) . '/' ) ); ?>" style="color:#666;" target="_blank">📋 Panel</a>
+        </div>
+        <?php
     }
 
     /* ── Menu ───────────────────────────────────────────────── */
@@ -682,7 +732,7 @@ class QuotePress_Settings {
     }
     /* ── Şablon kaydet ──────────────────────────────────────── */
     public static function save_templates() {
-        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Yetkisiz' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( esc_html__( 'Bu işlem için yetkiniz yok.', 'quotepress' ) );
         check_admin_referer( 'qp_save_templates' );
 
         $tpl = get_option( 'quotepress_templates', [] );
@@ -940,8 +990,24 @@ class QuotePress_Settings {
             <!-- STANDART ŞABLON -->
             <div class="qpt-panel" id="qpt-std">
               <div class="qpt-section">
-                <h3>Standart Format</h3>
-                <p style="color:#888;font-size:13px;">Standart kompakt format şu an şirket bilgilerini Settings'ten otomatik alır. İleri versiyonda özelleştirme buraya eklenecektir.</p>
+                <h3>Standart Kompakt Format</h3>
+                <p style="color:#555;font-size:13px;line-height:1.7;margin-bottom:12px;">
+                  Standart format; firma adı, logo, iletişim bilgileri ve ürün/fiyat tablosundan oluşur.
+                  Bu bilgiler <a href="<?php echo esc_url( admin_url('admin.php?page=quotepress-settings') ); ?>" style="color:#1a6eb5;font-weight:600;">Ayarlar sayfasından</a> otomatik alınır — burada ayrıca girilmesine gerek yoktur.
+                </p>
+                <div style="background:#f8fbff;border:1px solid #c0d8f0;border-radius:8px;padding:14px 18px;font-size:13px;color:#555;">
+                  <strong style="display:block;margin-bottom:8px;color:#1a6eb5;">Standart PDF içeriği:</strong>
+                  <ul style="margin:0;padding-left:18px;line-height:2;">
+                    <li>Firma adı &amp; logosu</li>
+                    <li>Teklif numarası &amp; tarihi</li>
+                    <li>Müşteri firma / iletişim kişisi</li>
+                    <li>Proje adı</li>
+                    <li>Ürün listesi (fiyatlar, KDV, genel toplam)</li>
+                    <li>Teklif notu (isteğe bağlı)</li>
+                    <li>Geçerlilik tarihi</li>
+                    <li>İletişim bloğu &amp; e-posta alt yazısı</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
