@@ -1,0 +1,254 @@
+/* QuotePress – Form Styles
+   Renk değişkenleri PHP tarafından --qp-primary, --qp-dark, --qp-light, --qp-border
+   olarak inject edilir. */
+
+.qp-form-wrap * { box-sizing: border-box; margin: 0; padding: 0; }
+
+.qp-form-wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    color: #222;
+}
+
+/* Header */
+.qp-form-header {
+    background: var(--qp-primary);
+    color: #fff;
+    padding: 28px 36px;
+    border-radius: 10px 10px 0 0;
+}
+.qp-form-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+.qp-form-header p {
+    font-size: 13px;
+    color: rgba(255,255,255,.82);
+}
+
+/* Body */
+.qp-form-body {
+    background: #fff;
+    border: 1px solid var(--qp-border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 30px 36px;
+}
+
+/* Section title */
+.qp-section {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--qp-primary);
+    margin: 24px 0 13px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--qp-border);
+}
+.qp-section:first-child { margin-top: 0; }
+
+/* Grid rows */
+.qp-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 13px;
+}
+.qp-row.qp-full { grid-template-columns: 1fr; }
+
+@media (max-width: 600px) {
+    .qp-row { grid-template-columns: 1fr; }
+    .qp-form-header,
+    .qp-form-body { padding-left: 18px; padding-right: 18px; }
+}
+
+/* Field */
+.qp-field { display: flex; flex-direction: column; gap: 5px; }
+.qp-field label { font-size: 13px; font-weight: 600; color: #333; }
+.qp-field label .req { color: #c0392b; margin-left: 2px; }
+
+.qp-field input,
+.qp-field select,
+.qp-field textarea {
+    padding: 9px 13px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    color: #222;
+    background: #fafafa;
+    outline: none;
+    font-family: inherit;
+    width: 100%;
+    transition: border-color .18s, background .18s, box-shadow .18s;
+}
+
+/* Hitap + Ad Soyad yan yana */
+.qp-salutation-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.qp-salutation-select {
+    width: auto !important;
+    flex: 0 0 auto;
+    padding: 9px 8px !important;
+    font-size: 13px !important;
+    background: #fff;
+    cursor: pointer;
+    min-width: 72px;
+}
+.qp-salutation-input {
+    flex: 1;
+    min-width: 0;
+}
+.qp-field input:focus,
+.qp-field select:focus,
+.qp-field textarea:focus {
+    border-color: var(--qp-primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.06);
+}
+.qp-field textarea { resize: vertical; min-height: 80px; }
+
+/* Honeypot */
+.qp-hp { display: none !important; visibility: hidden; }
+
+/* Extra option (communication type etc.) */
+.qp-extra-row { margin-bottom: 14px; }
+.qp-radio-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.qp-radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #fafafa;
+    color: #333;
+    transition: border-color .15s, background .15s;
+}
+.qp-radio-group label:hover { border-color: var(--qp-primary); background: var(--qp-light); }
+.qp-radio-group input[type="radio"] { accent-color: var(--qp-primary); width: 15px; height: 15px; }
+.qp-radio-group label:has(input:checked) { border-color: var(--qp-primary); background: var(--qp-light); }
+
+/* Items table */
+.qp-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+.qp-items-table thead th {
+    background: var(--qp-light);
+    padding: 9px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--qp-dark);
+    border: 1px solid var(--qp-border);
+}
+.qp-items-table tbody td {
+    padding: 7px;
+    border: 1px solid #e8e8e8;
+    vertical-align: middle;
+}
+.qp-items-table td input,
+.qp-items-table td select {
+    width: 100%;
+    padding: 6px 9px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fafafa;
+    color: #222;
+    outline: none;
+    font-family: inherit;
+    transition: border-color .15s;
+}
+.qp-items-table td input:focus,
+.qp-items-table td select:focus { border-color: var(--qp-primary); background: #fff; }
+
+/* Remove row button */
+.qp-row-remove {
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 19px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background .12s;
+}
+.qp-row-remove:hover { background: #fdecea; }
+
+/* Add item button */
+.qp-add-btn {
+    background: none;
+    border: 1px dashed var(--qp-primary);
+    color: var(--qp-primary);
+    padding: 8px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 2px;
+    transition: background .14s;
+}
+.qp-add-btn:hover { background: var(--qp-light); }
+
+/* Form footer */
+.qp-form-footer {
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid #ebebeb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.qp-form-footer p { font-size: 12px; color: #bbb; }
+
+/* Submit button */
+.qp-submit-btn {
+    background: var(--qp-primary);
+    color: #fff;
+    border: none;
+    padding: 12px 38px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background .18s, transform .1s;
+    letter-spacing: .02em;
+}
+.qp-submit-btn:hover { background: var(--qp-dark); }
+.qp-submit-btn:active { transform: scale(.98); }
+.qp-submit-btn:disabled { opacity: .55; cursor: default; }
+
+/* Message */
+#qp-form-msg {
+    display: none;
+    padding: 13px 16px;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 14px;
+}
+#qp-form-msg.qp-success {
+    background: var(--qp-light);
+    color: var(--qp-dark);
+    border: 1px solid var(--qp-border);
+}
+#qp-form-msg.qp-error {
+    background: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5b7b1;
+}

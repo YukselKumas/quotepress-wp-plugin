@@ -1,0 +1,429 @@
+# Turkish Translation for QuotePress
+# Copyright (C) 2025 QuotePress
+# This file is distributed under the GPL-2.0+ license.
+msgid ""
+msgstr ""
+"Project-Id-Version: QuotePress 1.0.0\n"
+"PO-Revision-Date: 2025-01-01T00:00:00+00:00\n"
+"Language: tr_TR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: quotepress\n"
+
+msgid "Settings"
+msgstr "Ayarlar"
+
+msgid "Quote Panel"
+msgstr "Teklif Paneli"
+
+msgid "Save Settings"
+msgstr "Ayarları Kaydet"
+
+msgid "Settings saved successfully."
+msgstr "Ayarlar başarıyla kaydedildi."
+
+msgid "Company Information"
+msgstr "Firma Bilgileri"
+
+msgid "Company Name"
+msgstr "Firma Adı"
+
+msgid "Address"
+msgstr "Adres"
+
+msgid "Email"
+msgstr "E-posta"
+
+msgid "Phone 1"
+msgstr "Telefon 1"
+
+msgid "Phone 2"
+msgstr "Telefon 2"
+
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+msgid "Website"
+msgstr "Web Sitesi"
+
+msgid "Email Settings"
+msgstr "Mail Ayarları"
+
+msgid "Recipient Email"
+msgstr "Alıcı E-posta"
+
+msgid "Quote requests will be sent here. Separate multiple addresses with commas."
+msgstr "Teklif talepleri bu adrese iletilir. Birden fazla adres için virgülle ayırın."
+
+msgid "Mail Footer"
+msgstr "Mail Alt Yazısı"
+
+msgid "This email was sent automatically. Please do not reply."
+msgstr "Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayınız."
+
+msgid "Pricing"
+msgstr "Fiyatlandırma"
+
+msgid "Currencies"
+msgstr "Para Birimleri"
+
+msgid "One currency code per line."
+msgstr "Her satıra bir para birimi kodu yazın."
+
+msgid "Default Currency"
+msgstr "Varsayılan Para Birimi"
+
+msgid "Default VAT (%)"
+msgstr "Varsayılan KDV (%)"
+
+msgid "Set to 0 to disable VAT by default."
+msgstr "Varsayılan olarak KDV'yi devre dışı bırakmak için 0 yazın."
+
+msgid "Validity (days)"
+msgstr "Geçerlilik Süresi (gün)"
+
+msgid "Shown on the PDF quote as the expiry date."
+msgstr "PDF teklifte son geçerlilik tarihi olarak gösterilir."
+
+msgid "Products & Options"
+msgstr "Ürünler ve Seçenekler"
+
+msgid "Product Categories"
+msgstr "Ürün Kategorileri"
+
+msgid "One product per line. These appear in the form dropdown."
+msgstr "Her satıra bir ürün yazın. Form açılır menüsüne otomatik yansır."
+
+msgid "Extra Option Label"
+msgstr "Ek Seçenek Etiketi"
+
+msgid "e.g. Communication Type"
+msgstr "Örn: Haberleşme Tipi"
+
+msgid "Optional extra question shown when specific products are selected. Leave blank to disable."
+msgstr "Belirli ürünler seçildiğinde gösterilen ek soru. Devre dışı bırakmak için boş bırakın."
+
+msgid "Extra Option Choices"
+msgstr "Ek Seçenek Seçenekleri"
+
+msgid "One choice per line."
+msgstr "Her satıra bir seçenek."
+
+msgid "Show Extra Option When"
+msgstr "Hangi Ürünlerde Gösterilsin"
+
+msgid "Product names (one per line) that trigger the extra option. Must match categories exactly."
+msgstr "Ek seçeneği tetikleyecek ürün adları (her satıra bir tane). Kategori listesiyle birebir eşleşmeli."
+
+msgid "Design & Appearance"
+msgstr "Tasarım ve Görünüm"
+
+msgid "Color Theme"
+msgstr "Renk Teması"
+
+msgid "Green"
+msgstr "Yeşil"
+
+msgid "Blue"
+msgstr "Mavi"
+
+msgid "Red"
+msgstr "Kırmızı"
+
+msgid "Purple"
+msgstr "Mor"
+
+msgid "Orange"
+msgstr "Turuncu"
+
+msgid "Custom"
+msgstr "Özel"
+
+msgid "Panel URL Slug"
+msgstr "Panel URL Uzantısı"
+
+msgid "Panel will be accessible at: %s"
+msgstr "Panel şu adreste erişilebilir: %s"
+
+msgid "Form Shortcode:"
+msgstr "Form Kısa Kodu:"
+
+msgid "Add this shortcode to any page to display the request form."
+msgstr "Teklif formunu göstermek için bu kısa kodu herhangi bir sayfaya ekleyin."
+
+msgid "Quote Panel:"
+msgstr "Teklif Paneli:"
+
+msgid "Request a Quote"
+msgstr "Teklif Talep Et"
+
+msgid "Fill in the form below to receive a price quote. We will get back to you as soon as possible."
+msgstr "Fiyat teklifi almak için aşağıdaki formu doldurun. En kısa sürede sizinle iletişime geçeceğiz."
+
+msgid "Project Details"
+msgstr "Proje Bilgileri"
+
+msgid "Project Name"
+msgstr "Proje Adı"
+
+msgid "e.g. Office HVAC Upgrade 2025"
+msgstr "Örn: Bina Isıtma Sistemi Yenileme 2025"
+
+msgid "Expected Delivery Date"
+msgstr "Tahmini Teslim Tarihi"
+
+msgid "Project Description"
+msgstr "Proje Açıklaması"
+
+msgid "Installation location, application type, special requirements..."
+msgstr "Kurulum yeri, uygulama tipi veya özel gereksinimler..."
+
+msgid "Products / Services"
+msgstr "Ürün / Hizmet Listesi"
+
+msgid "Product / Category"
+msgstr "Ürün / Kategori"
+
+msgid "Model / Spec"
+msgstr "Model / Özellik"
+
+msgid "Qty"
+msgstr "Adet"
+
+msgid "Notes"
+msgstr "Notlar"
+
+msgid "Company / Contact Information"
+msgstr "Firma / İletişim Bilgileri"
+
+msgid "Tax / VAT Number"
+msgstr "Vergi / TC Kimlik No"
+
+msgid "Optional"
+msgstr "Opsiyonel"
+
+msgid "Contact Name"
+msgstr "Yetkili Adı Soyadı"
+
+msgid "Full Name"
+msgstr "Ad Soyad"
+
+msgid "Title / Position"
+msgstr "Görevi / Unvanı"
+
+msgid "e.g. Procurement Manager"
+msgstr "Örn: Satın Alma Müdürü"
+
+msgid "Email Address"
+msgstr "E-posta Adresi"
+
+msgid "Phone"
+msgstr "Telefon"
+
+msgid "City"
+msgstr "Şehir"
+
+msgid "Country"
+msgstr "Ülke"
+
+msgid "Additional Notes"
+msgstr "Ek Notlar / Özel Talepler"
+
+msgid "Delivery address, technical requirements, billing info, etc."
+msgstr "Teslimat adresi, teknik gereksinimler, fatura bilgisi vb..."
+
+msgid "* Required fields"
+msgstr "* ile işaretli alanlar zorunludur"
+
+msgid "Send Quote Request ›"
+msgstr "Teklif Talebi Gönder ›"
+
+msgid "Sending..."
+msgstr "Gönderiliyor..."
+
+msgid "Your quote request has been submitted successfully! A confirmation email has been sent to you."
+msgstr "Teklif talebiniz başarıyla iletildi! Onay e-postası adresinize gönderildi."
+
+msgid "Something went wrong. Please try again or contact us directly."
+msgstr "Gönderim sırasında bir sorun oluştu. Lütfen tekrar deneyin."
+
+msgid "Connection error. Please check your internet connection."
+msgstr "Bağlantı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin."
+
+msgid "Please select an option for: "
+msgstr "Lütfen seçim yapın: "
+
+msgid "pcs"
+msgstr "adet"
+
+msgid "-- Select --"
+msgstr "-- Seçiniz --"
+
+msgid "+ Add Product"
+msgstr "+ Ürün Ekle"
+
+msgid "Model, spec..."
+msgstr "Model, DN, PN..."
+
+msgid "You do not have permission to access this page."
+msgstr "Bu sayfaya erişim yetkiniz yok."
+
+msgid "Select a request from the list."
+msgstr "Sol listeden bir talep seçin."
+
+msgid "All"
+msgstr "Tümü"
+
+msgid "Pending"
+msgstr "Bekleyen"
+
+msgid "Quoted"
+msgstr "Yanıtlanan"
+
+msgid "Total"
+msgstr "Toplam"
+
+msgid "Back to Site"
+msgstr "Siteye Dön"
+
+msgid "Company / Contact"
+msgstr "Firma / Yetkili"
+
+msgid "Contact"
+msgstr "Yetkili"
+
+msgid "Tax No"
+msgstr "Vergi/TC No"
+
+msgid "City / Country"
+msgstr "Şehir / Ülke"
+
+msgid "Requested Products"
+msgstr "Talep Edilen Ürünler"
+
+msgid "Product"
+msgstr "Ürün"
+
+msgid "Model"
+msgstr "Model"
+
+msgid "Note"
+msgstr "Not"
+
+msgid "Prepare & Send Quote"
+msgstr "Teklif Hazırla & Gönder"
+
+msgid "This request has already been quoted. You can send a new quote below."
+msgstr "Bu talep daha önce yanıtlandı. Yeniden teklif gönderebilirsiniz."
+
+msgid "Currency"
+msgstr "Para Birimi"
+
+msgid "VAT Rate"
+msgstr "KDV Oranı"
+
+msgid "No VAT"
+msgstr "KDV Yok"
+
+msgid "Unit Price"
+msgstr "Birim Fiyat"
+
+msgid "Subtotal"
+msgstr "Ara Toplam"
+
+msgid "VAT"
+msgstr "KDV"
+
+msgid "Grand Total"
+msgstr "Genel Toplam"
+
+msgid "Default validity: %d days"
+msgstr "Varsayılan geçerlilik: %d gün"
+
+msgid "Generate PDF & Send Quote"
+msgstr "PDF Teklif Hazırla & Gönder"
+
+msgid "Quote sent successfully!"
+msgstr "Teklif başarıyla gönderildi!"
+
+msgid "Connection error."
+msgstr "Bağlantı hatası."
+
+msgid "Are you sure you want to delete this request?"
+msgstr "Bu talebi silmek istediğinize emin misiniz?"
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "New Quote Request: %s"
+msgstr "Yeni Teklif Talebi: %s"
+
+msgid "From %s"
+msgstr "%s tarafından"
+
+msgid "Open Panel & Respond"
+msgstr "Teklif Panelini Aç & Yanıtla"
+
+msgid "Contact Information"
+msgstr "İletişim Bilgilerimiz"
+
+msgid "Your Request Summary"
+msgstr "Talep Özetiniz"
+
+msgid "Your Quote Request Has Been Received"
+msgstr "Teklif Talebiniz Alındı"
+
+msgid "Dear"
+msgstr "Sayın"
+
+msgid "Your quote request for project \"%s\" has been successfully submitted. Our team will review your request and respond with a price quote as soon as possible."
+msgstr "\"%s\" projesine ait teklif talebiniz başarıyla iletilmiştir. Uzman ekibimiz talebinizi inceleyerek en kısa sürede fiyat teklifimizi sizinle paylaşacaktır."
+
+msgid "PRICE QUOTATION"
+msgstr "FİYAT TEKLİFİ"
+
+msgid "No"
+msgstr "No"
+
+msgid "Date"
+msgstr "Tarih"
+
+msgid "Valid until"
+msgstr "Geçerlilik"
+
+msgid "Delivery"
+msgstr "Teslim"
+
+msgid "Option"
+msgstr "Seçenek"
+
+msgid "Bill To"
+msgstr "Alıcı"
+
+msgid "Project"
+msgstr "Proje"
+
+msgid "Product / Service"
+msgstr "Ürün / Hizmet"
+
+msgid "GRAND TOTAL"
+msgstr "GENEL TOPLAM"
+
+msgid "This quote is valid for %d days."
+msgstr "Bu teklif %d gün geçerlidir."
+
+msgid "[QuotePress] New Request: %s – %s"
+msgstr "[QuotePress] Yeni Teklif Talebi: %s – %s"
+
+msgid "[QuotePress] Request Received – %s"
+msgstr "[QuotePress] Teklif Talebiniz Alındı – %s"
+
+msgid "[QuotePress] Your Price Quotation – %s (%s)"
+msgstr "[QuotePress] Fiyat Teklifiniz Hazır – %s (%s)"
+
+msgid "Attn"
+msgstr "Sayın"
+
+msgid "No requests yet."
+msgstr "Henüz teklif talebi yok."

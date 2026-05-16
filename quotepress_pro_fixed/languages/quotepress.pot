@@ -1,0 +1,444 @@
+# Copyright (C) 2025 QuotePress
+# This file is distributed under the GPL-2.0+ license.
+msgid ""
+msgstr ""
+"Project-Id-Version: QuotePress 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/quotepress\n"
+"POT-Creation-Date: 2025-01-01T00:00:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2025-01-01T00:00:00+00:00\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: QuotePress\n"
+"X-Domain: quotepress\n"
+
+msgid "Settings"
+msgstr ""
+
+msgid "Quote Panel"
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Settings saved successfully."
+msgstr ""
+
+msgid "Company Information"
+msgstr ""
+
+msgid "Company Name"
+msgstr ""
+
+msgid "Address"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Phone 1"
+msgstr ""
+
+msgid "Phone 2"
+msgstr ""
+
+msgid "WhatsApp"
+msgstr ""
+
+msgid "Website"
+msgstr ""
+
+msgid "Email Settings"
+msgstr ""
+
+msgid "Recipient Email"
+msgstr ""
+
+msgid "Quote requests will be sent here. Separate multiple addresses with commas."
+msgstr ""
+
+msgid "Mail Footer"
+msgstr ""
+
+msgid "This email was sent automatically. Please do not reply."
+msgstr ""
+
+msgid "Pricing"
+msgstr ""
+
+msgid "Currencies"
+msgstr ""
+
+msgid "One currency code per line."
+msgstr ""
+
+msgid "Default Currency"
+msgstr ""
+
+msgid "Default VAT (%)"
+msgstr ""
+
+msgid "Set to 0 to disable VAT by default."
+msgstr ""
+
+msgid "Validity (days)"
+msgstr ""
+
+msgid "Shown on the PDF quote as the expiry date."
+msgstr ""
+
+msgid "Products & Options"
+msgstr ""
+
+msgid "Product Categories"
+msgstr ""
+
+msgid "One product per line. These appear in the form dropdown."
+msgstr ""
+
+msgid "Extra Option Label"
+msgstr ""
+
+msgid "e.g. Communication Type"
+msgstr ""
+
+msgid "Optional extra question shown when specific products are selected. Leave blank to disable."
+msgstr ""
+
+msgid "Extra Option Choices"
+msgstr ""
+
+msgid "One choice per line."
+msgstr ""
+
+msgid "Show Extra Option When"
+msgstr ""
+
+msgid "Product names (one per line) that trigger the extra option. Must match categories exactly."
+msgstr ""
+
+msgid "Design & Appearance"
+msgstr ""
+
+msgid "Color Theme"
+msgstr ""
+
+msgid "Green"
+msgstr ""
+
+msgid "Blue"
+msgstr ""
+
+msgid "Red"
+msgstr ""
+
+msgid "Purple"
+msgstr ""
+
+msgid "Orange"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Panel URL Slug"
+msgstr ""
+
+msgid "Panel will be accessible at: %s"
+msgstr ""
+
+msgid "Form Shortcode:"
+msgstr ""
+
+msgid "Add this shortcode to any page to display the request form."
+msgstr ""
+
+msgid "Quote Panel:"
+msgstr ""
+
+msgid "Request a Quote"
+msgstr ""
+
+msgid "Fill in the form below to receive a price quote. We will get back to you as soon as possible."
+msgstr ""
+
+msgid "Project Details"
+msgstr ""
+
+msgid "Project Name"
+msgstr ""
+
+msgid "e.g. Office HVAC Upgrade 2025"
+msgstr ""
+
+msgid "Expected Delivery Date"
+msgstr ""
+
+msgid "Project Description"
+msgstr ""
+
+msgid "Installation location, application type, special requirements..."
+msgstr ""
+
+msgid "Products / Services"
+msgstr ""
+
+msgid "Product / Category"
+msgstr ""
+
+msgid "Model / Spec"
+msgstr ""
+
+msgid "Qty"
+msgstr ""
+
+msgid "Notes"
+msgstr ""
+
+msgid "Company / Contact Information"
+msgstr ""
+
+msgid "Tax / VAT Number"
+msgstr ""
+
+msgid "Optional"
+msgstr ""
+
+msgid "Contact Name"
+msgstr ""
+
+msgid "Full Name"
+msgstr ""
+
+msgid "Title / Position"
+msgstr ""
+
+msgid "e.g. Procurement Manager"
+msgstr ""
+
+msgid "Email Address"
+msgstr ""
+
+msgid "Phone"
+msgstr ""
+
+msgid "City"
+msgstr ""
+
+msgid "Country"
+msgstr ""
+
+msgid "Additional Notes"
+msgstr ""
+
+msgid "Delivery address, technical requirements, billing info, etc."
+msgstr ""
+
+msgid "* Required fields"
+msgstr ""
+
+msgid "Send Quote Request ›"
+msgstr ""
+
+msgid "Sending..."
+msgstr ""
+
+msgid "Your quote request has been submitted successfully! A confirmation email has been sent to you."
+msgstr ""
+
+msgid "Something went wrong. Please try again or contact us directly."
+msgstr ""
+
+msgid "Connection error. Please check your internet connection."
+msgstr ""
+
+msgid "Please select an option for: "
+msgstr ""
+
+msgid "pcs"
+msgstr ""
+
+msgid "-- Select --"
+msgstr ""
+
+msgid "+ Add Product"
+msgstr ""
+
+msgid "Model, spec..."
+msgstr ""
+
+msgid "You do not have permission to access this page."
+msgstr ""
+
+msgid "Select a request from the list."
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Quoted"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Quote Panel"
+msgstr ""
+
+msgid "Back to Site"
+msgstr ""
+
+msgid "Company / Contact"
+msgstr ""
+
+msgid "Contact"
+msgstr ""
+
+msgid "Tax No"
+msgstr ""
+
+msgid "City / Country"
+msgstr ""
+
+msgid "Requested Products"
+msgstr ""
+
+msgid "Product"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Note"
+msgstr ""
+
+msgid "Project Description"
+msgstr ""
+
+msgid "Additional Notes"
+msgstr ""
+
+msgid "Prepare & Send Quote"
+msgstr ""
+
+msgid "This request has already been quoted. You can send a new quote below."
+msgstr ""
+
+msgid "Currency"
+msgstr ""
+
+msgid "VAT Rate"
+msgstr ""
+
+msgid "No VAT"
+msgstr ""
+
+msgid "Unit Price"
+msgstr ""
+
+msgid "Subtotal"
+msgstr ""
+
+msgid "VAT"
+msgstr ""
+
+msgid "Grand Total"
+msgstr ""
+
+msgid "Default validity: %d days"
+msgstr ""
+
+msgid "Generate PDF & Send Quote"
+msgstr ""
+
+msgid "Quote sent successfully!"
+msgstr ""
+
+msgid "Connection error."
+msgstr ""
+
+msgid "Are you sure you want to delete this request?"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "New Quote Request: %s"
+msgstr ""
+
+msgid "From %s"
+msgstr ""
+
+msgid "Open Panel & Respond"
+msgstr ""
+
+msgid "Contact Information"
+msgstr ""
+
+msgid "Your Request Summary"
+msgstr ""
+
+msgid "Your Quote Request Has Been Received"
+msgstr ""
+
+msgid "Dear"
+msgstr ""
+
+msgid "Your quote request for project \"%s\" has been successfully submitted. Our team will review your request and respond with a price quote as soon as possible."
+msgstr ""
+
+msgid "PRICE QUOTATION"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Valid until"
+msgstr ""
+
+msgid "Delivery"
+msgstr ""
+
+msgid "Option"
+msgstr ""
+
+msgid "Bill To"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Product / Service"
+msgstr ""
+
+msgid "GRAND TOTAL"
+msgstr ""
+
+msgid "Notes"
+msgstr ""
+
+msgid "This quote is valid for %d days."
+msgstr ""
+
+msgid "[QuotePress] New Request: %s – %s"
+msgstr ""
+
+msgid "[QuotePress] Request Received – %s"
+msgstr ""
+
+msgid "[QuotePress] Your Price Quotation – %s (%s)"
+msgstr ""
+
+msgid "Attn"
+msgstr ""
+
+msgid "No requests yet."
+msgstr ""
