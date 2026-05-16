@@ -172,271 +172,512 @@ class QuotePress_Settings {
     public static function render() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         settings_errors( 'qp_msg' );
+
         $s      = get_option( 'quotepress_settings', QuotePress_Database::default_settings() );
         $themes = self::themes();
         $slug   = $s['panel_slug'] ?? 'quote-panel';
+        $c      = self::active_theme_colors();
+        $primary = $c['primary'];
+        $light   = $c['light'];
+        $border  = $c['border'];
+        $dark    = $c['dark'];
+
+        $parse = fn( $key, $default = '' ) => array_values( array_filter(
+            array_map( 'trim', explode( "\n", $s[ $key ] ?? $default ) )
+        ) );
+
+        $currencies   = $parse( 'currencies', "USD\nEUR\nGBP\nTRY" );
+        $def_cur      = trim( $s['default_currency'] ?? 'USD' );
+        $def_vat      = trim( $s['default_vat'] ?? '0' );
+        $categories   = $parse( 'product_categories' );
+        $extra_items  = $parse( 'extra_option_items' );
+        $triggers     = $parse( 'extra_option_trigger' );
+        $det_triggers = $parse( 'detailed_format_triggers' );
+        $logo_id      = intval( $s['company_logo_id'] ?? 0 );
+        $logo_url     = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
+
+        $vat_options = [
+            '0'  => __( 'No VAT', 'quotepress' ),
+            '5'  => '5%', '8' => '8%', '10' => '10%',
+            '18' => '18%', '20' => '20%', '21' => '21%', '25' => '25%',
+        ];
         ?>
         <div class="wrap">
         <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span style="background:<?php echo esc_attr( self::active_theme_colors()['primary'] ); ?>;color:#fff;padding:4px 14px;border-radius:6px;font-size:15px;">QuotePress</span>
+            <span style="background:<?php echo esc_attr($primary); ?>;color:#fff;padding:4px 14px;border-radius:6px;font-size:15px;">QuotePress</span>
             <?php esc_html_e( 'Settings', 'quotepress' ); ?>
         </h1>
 
-        <form method="post" action="">
+        <form method="post" action="" id="qp-settings-form">
         <?php wp_nonce_field( 'qp_save_settings', 'qp_settings_nonce' ); ?>
 
         <style>
         .qp-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:4px;}
-        .qp-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:20px 24px;}
-        .qp-card h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:<?php echo esc_attr( self::active_theme_colors()['primary'] ); ?>;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid <?php echo esc_attr( self::active_theme_colors()['light'] ); ?>;}
-        .qp-card table{width:100%;}
-        .qp-card th{text-align:left;font-size:13px;color:#555;font-weight:600;padding:8px 0 2px;width:180px;vertical-align:top;padding-top:11px;}
-        .qp-card td{padding:3px 0 9px;}
-        .qp-card input[type=text],.qp-card input[type=email],.qp-card input[type=number],.qp-card select{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;}
-        .qp-card textarea{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;resize:vertical;}
-        .qp-card input:focus,.qp-card textarea:focus,.qp-card select:focus{outline:none;border-color:<?php echo esc_attr( self::active_theme_colors()['primary'] ); ?>;}
-        .qp-hint{font-size:11px;color:#999;margin-top:3px;line-height:1.5;}
         .qp-full{grid-column:1/-1;}
+        .qp-card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:20px 24px;}
+        .qp-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:<?php echo esc_attr($primary); ?>;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid <?php echo esc_attr($light); ?>;}
+        .qp-row{display:grid;grid-template-columns:160px 1fr;gap:4px 14px;align-items:start;margin-bottom:14px;}
+        .qp-row>label{font-size:13px;font-weight:600;color:#555;padding-top:9px;line-height:1.4;}
+        .qp-field{display:flex;flex-direction:column;gap:4px;}
+        .qp-input{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:inherit;}
+        .qp-input:focus{outline:none;border-color:<?php echo esc_attr($primary); ?>;box-shadow:0 0 0 2px <?php echo esc_attr($light); ?>;}
+        textarea.qp-input{resize:vertical;}
+        .qp-hint{font-size:11px;color:#999;line-height:1.5;margin:0;}
+        /* Chip UI */
+        .qp-chip-wrap{border:1px solid #ccc;border-radius:6px;padding:8px 10px;background:#fff;cursor:text;transition:border-color .15s,box-shadow .15s;}
+        .qp-chip-wrap:focus-within{border-color:<?php echo esc_attr($primary); ?>;box-shadow:0 0 0 2px <?php echo esc_attr($light); ?>;}
+        .qp-chips{display:flex;flex-wrap:wrap;gap:5px;min-height:24px;}
+        .qp-chip{display:inline-flex;align-items:center;gap:3px;background:<?php echo esc_attr($light); ?>;border:1px solid <?php echo esc_attr($border); ?>;border-radius:20px;padding:3px 6px 3px 10px;font-size:12px;font-weight:600;color:<?php echo esc_attr($dark); ?>;line-height:1.4;}
+        .qp-chip-rm{background:none;border:none;cursor:pointer;color:<?php echo esc_attr($primary); ?>;font-size:15px;line-height:1;padding:0 2px;opacity:.7;}
+        .qp-chip-rm:hover{opacity:1;}
+        .qp-chip-add-row{display:flex;gap:6px;margin-top:6px;}
+        .qp-chip-add-row input{flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:5px 9px;font-size:13px;background:#fafafa;font-family:inherit;}
+        .qp-chip-add-row input:focus{outline:none;border-color:<?php echo esc_attr($primary); ?>;background:#fff;}
+        .qp-chip-add-btn{background:<?php echo esc_attr($primary); ?>;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+        .qp-chip-add-btn:hover{opacity:.85;}
+        /* Checkbox group */
+        .qp-check-group{display:flex;flex-wrap:wrap;gap:6px 16px;padding:9px 11px;border:1px solid #ccc;border-radius:6px;min-height:40px;background:#fff;}
+        .qp-check-group label{display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;user-select:none;}
+        /* Theme buttons */
         .qp-theme-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
         .qp-theme-btn{border:2px solid #ddd;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;background:#fff;transition:all .15s;}
-        .qp-theme-btn:hover,.qp-theme-btn.active{border-color:var(--qp-primary);box-shadow:0 0 0 3px rgba(0,0,0,.06);}
-        .qp-swatch{width:16px;height:16px;border-radius:50%;display:inline-block;}
-        .qp-info-bar{margin-top:18px;background:<?php echo esc_attr( self::active_theme_colors()['light'] ); ?>;border:1px solid <?php echo esc_attr( self::active_theme_colors()['border'] ); ?>;border-radius:8px;padding:14px 18px;font-size:13px;color:<?php echo esc_attr( self::active_theme_colors()['dark'] ); ?>;}
-        .qp-info-bar a{color:<?php echo esc_attr( self::active_theme_colors()['primary'] ); ?>;font-weight:600;}
-        @media(max-width:900px){.qp-grid{grid-template-columns:1fr;}}
+        .qp-theme-btn:hover,.qp-theme-btn.active{border-color:<?php echo esc_attr($primary); ?>;box-shadow:0 0 0 3px <?php echo esc_attr($light); ?>;}
+        .qp-swatch{width:16px;height:16px;border-radius:50%;display:inline-block;flex-shrink:0;}
+        .qp-info-bar{margin-top:18px;background:<?php echo esc_attr($light); ?>;border:1px solid <?php echo esc_attr($border); ?>;border-radius:8px;padding:14px 18px;font-size:13px;color:<?php echo esc_attr($dark); ?>;}
+        .qp-info-bar a{color:<?php echo esc_attr($primary); ?>;font-weight:600;}
+        @media(max-width:900px){.qp-grid{grid-template-columns:1fr;}.qp-row{grid-template-columns:1fr;}.qp-row>label{padding-top:0;}}
         </style>
 
         <div class="qp-grid">
 
-          <!-- Company -->
-          <div class="qp-card">
-            <h2>🏢 <?php esc_html_e( 'Company Information', 'quotepress' ); ?></h2>
-            <table>
-              <tr><th><?php esc_html_e( 'Company Name', 'quotepress' ); ?></th><td><input type="text" name="company_name" value="<?php echo esc_attr( $s['company_name'] ?? '' ); ?>"></td></tr>
-              <tr><th><?php esc_html_e( 'Address', 'quotepress' ); ?></th><td><textarea name="company_address" rows="2"><?php echo esc_textarea( $s['company_address'] ?? '' ); ?></textarea></td></tr>
-              <tr><th><?php esc_html_e( 'Email', 'quotepress' ); ?></th><td><input type="text" name="company_email" value="<?php echo esc_attr( $s['company_email'] ?? '' ); ?>"></td></tr>
-              <tr><th><?php esc_html_e( 'Phone 1', 'quotepress' ); ?></th><td><input type="text" name="company_phone1" value="<?php echo esc_attr( $s['company_phone1'] ?? '' ); ?>"></td></tr>
-              <tr><th><?php esc_html_e( 'Phone 2', 'quotepress' ); ?></th><td><input type="text" name="company_phone2" value="<?php echo esc_attr( $s['company_phone2'] ?? '' ); ?>"></td></tr>
-              <tr><th><?php esc_html_e( 'WhatsApp', 'quotepress' ); ?></th><td><input type="text" name="company_whatsapp" value="<?php echo esc_attr( $s['company_whatsapp'] ?? '' ); ?>"></td></tr>
-              <tr><th><?php esc_html_e( 'Website', 'quotepress' ); ?></th><td><input type="text" name="company_website" value="<?php echo esc_attr( $s['company_website'] ?? '' ); ?>"></td></tr>
-              <tr>
-                <th>Logo</th>
-                <td>
-                  <?php
-                  $logo_id  = intval( $s['company_logo_id'] ?? 0 );
-                  $logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
-                  ?>
-                  <div id="qp-logo-preview" style="margin-bottom:8px;">
-                    <?php if ( $logo_url ) : ?>
-                      <img src="<?php echo esc_url( $logo_url ); ?>" style="max-height:60px;max-width:200px;border:1px solid #ddd;border-radius:4px;padding:4px;">
-                    <?php endif; ?>
-                  </div>
-                  <input type="hidden" name="company_logo_id" id="qp-logo-id" value="<?php echo esc_attr( $logo_id ); ?>">
-                  <button type="button" class="button" id="qp-logo-btn">Logo Sec</button>
-                  <?php if ( $logo_id ) : ?>
-                    <button type="button" class="button" id="qp-logo-remove" style="margin-left:6px;color:#a00;">Kaldir</button>
-                  <?php endif; ?>
-                  <p class="qp-hint">PNG veya SVG, seffaf arka plan onerilir. Teklif PDF'inin sol ust kosesinde gorunur.</p>
-                </td>
-              </tr>
-            </table>
-          </div>
-          <script>
-          jQuery(function($){
-            var frame;
-            $('#qp-logo-btn').on('click', function(){
-              if (frame) { frame.open(); return; }
-              frame = wp.media({ title: 'Logo Sec', button: { text: 'Kullan' }, multiple: false });
-              frame.on('select', function(){
-                var att = frame.state().get('selection').first().toJSON();
-                $('#qp-logo-id').val(att.id);
-                var prev = att.sizes && att.sizes.medium ? att.sizes.medium.url : att.url;
-                $('#qp-logo-preview').html('<img src="'+prev+'" style="max-height:60px;max-width:200px;border:1px solid #ddd;border-radius:4px;padding:4px;">');
-                if (!$('#qp-logo-remove').length) {
-                  $('#qp-logo-btn').after('<button type="button" class="button" id="qp-logo-remove" style="margin-left:6px;color:#a00;">Kaldir</button>');
-                  attachRemove();
-                }
-              });
-              frame.open();
-            });
-            function attachRemove(){
-              $('#qp-logo-remove').on('click', function(){
-                $('#qp-logo-id').val('');
-                $('#qp-logo-preview').html('');
-                $(this).remove();
-              });
-            }
-            attachRemove();
-          });
-          </script>
+        <!-- ── Company ───────────────────────────────────────────── -->
+        <div class="qp-card">
+            <div class="qp-card-title">🏢 <?php esc_html_e( 'Company Information', 'quotepress' ); ?></div>
 
-          <!-- Mail -->
-          <div class="qp-card">
-            <h2>📧 <?php esc_html_e( 'Email Settings', 'quotepress' ); ?></h2>
-            <table>
-              <tr>
-                <th><?php esc_html_e( 'Recipient Email', 'quotepress' ); ?></th>
-                <td>
-                  <input type="text" name="recipient_email" value="<?php echo esc_attr( $s['recipient_email'] ?? '' ); ?>">
-                  <p class="qp-hint"><?php esc_html_e( 'Quote requests will be sent here. Separate multiple addresses with commas.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Mail Footer', 'quotepress' ); ?></th>
-                <td><textarea name="mail_footer" rows="3"><?php echo esc_textarea( $s['mail_footer'] ?? '' ); ?></textarea></td>
-              </tr>
-            </table>
-          </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Company Name', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="company_name" value="<?php echo esc_attr( $s['company_name'] ?? '' ); ?>">
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Address', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <textarea class="qp-input" name="company_address" rows="2"><?php echo esc_textarea( $s['company_address'] ?? '' ); ?></textarea>
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Email', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="email" name="company_email" value="<?php echo esc_attr( $s['company_email'] ?? '' ); ?>">
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Phone 1', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="company_phone1" value="<?php echo esc_attr( $s['company_phone1'] ?? '' ); ?>">
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Phone 2', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="company_phone2" value="<?php echo esc_attr( $s['company_phone2'] ?? '' ); ?>">
+                </div>
+            </div>
+            <div class="qp-row">
+                <label>WhatsApp</label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="company_whatsapp" value="<?php echo esc_attr( $s['company_whatsapp'] ?? '' ); ?>">
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Website', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="company_website" value="<?php echo esc_attr( $s['company_website'] ?? '' ); ?>">
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Logo', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div id="qp-logo-preview" style="margin-bottom:6px;">
+                        <?php if ( $logo_url ) : ?>
+                        <img src="<?php echo esc_url( $logo_url ); ?>" style="max-height:60px;max-width:200px;border:1px solid #ddd;border-radius:4px;padding:4px;">
+                        <?php endif; ?>
+                    </div>
+                    <input type="hidden" name="company_logo_id" id="qp-logo-id" value="<?php echo esc_attr( $logo_id ); ?>">
+                    <div style="display:flex;gap:6px;">
+                        <button type="button" class="button" id="qp-logo-btn"><?php esc_html_e( 'Choose Logo', 'quotepress' ); ?></button>
+                        <button type="button" class="button" id="qp-logo-remove" style="color:#a00;<?php echo $logo_id ? '' : 'display:none;'; ?>"><?php esc_html_e( 'Remove', 'quotepress' ); ?></button>
+                    </div>
+                    <p class="qp-hint"><?php esc_html_e( 'PNG or SVG with transparent background. Appears top-left on PDF quotes.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+        </div>
 
-          <!-- Pricing -->
-          <div class="qp-card">
-            <h2>💰 <?php esc_html_e( 'Pricing', 'quotepress' ); ?></h2>
-            <table>
-              <tr>
-                <th><?php esc_html_e( 'Currencies', 'quotepress' ); ?></th>
-                <td>
-                  <textarea name="currencies" rows="4"><?php echo esc_textarea( $s['currencies'] ?? "USD\nEUR\nGBP\nTRY" ); ?></textarea>
-                  <p class="qp-hint"><?php esc_html_e( 'One currency code per line.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Default Currency', 'quotepress' ); ?></th>
-                <td><input type="text" name="default_currency" value="<?php echo esc_attr( $s['default_currency'] ?? 'USD' ); ?>"></td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Default VAT (%)', 'quotepress' ); ?></th>
-                <td>
-                  <input type="number" name="default_vat" value="<?php echo esc_attr( $s['default_vat'] ?? '0' ); ?>" min="0" max="100">
-                  <p class="qp-hint"><?php esc_html_e( 'Set to 0 to disable VAT by default.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Validity (days)', 'quotepress' ); ?></th>
-                <td>
-                  <input type="number" name="validity_days" value="<?php echo esc_attr( $s['validity_days'] ?? '30' ); ?>" min="1">
-                  <p class="qp-hint"><?php esc_html_e( 'Shown on the PDF quote as the expiry date.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th>Teklif No</th>
-                <td>
-                  <div style="display:flex;gap:8px;align-items:center;">
-                    <input type="text" name="quote_number_prefix" value="<?php echo esc_attr( $s['quote_number_prefix'] ?? '' ); ?>" style="width:80px;" placeholder="&Ouml;nek">
-                    <input type="number" name="quote_number_start" value="<?php echo esc_attr( $s['quote_number_start'] ?? '1' ); ?>" style="width:100px;" min="1">
-                  </div>
-                  <p class="qp-hint">&Ouml;nek + numara. &Ouml;rn: TKL- + 100 &rarr; TKL-0100. Mevcut teklifler etkilenmez.</p>
-                </td>
-              </tr>
-            </table>
-          </div>
+        <!-- ── Email ─────────────────────────────────────────────── -->
+        <div class="qp-card">
+            <div class="qp-card-title">📧 <?php esc_html_e( 'Email Settings', 'quotepress' ); ?></div>
 
-          <!-- Products -->
-          <div class="qp-card">
-            <h2>📦 <?php esc_html_e( 'Products & Options', 'quotepress' ); ?></h2>
-            <table>
-              <tr>
-                <th><?php esc_html_e( 'Product Categories', 'quotepress' ); ?></th>
-                <td>
-                  <textarea name="product_categories" rows="6"><?php echo esc_textarea( $s['product_categories'] ?? '' ); ?></textarea>
-                  <p class="qp-hint"><?php esc_html_e( 'One product per line. These appear in the form dropdown.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th>Detaylı Format Tetikleyicisi</th>
-                <td>
-                  <textarea name="detailed_format_triggers" rows="4" placeholder="ısı gider&#10;heat cost"><?php echo esc_textarea( $s['detailed_format_triggers'] ?? '' ); ?></textarea>
-                  <p class="qp-hint">Her satıra bir anahtar kelime. Bu kelimelerden biri ürün adında geçiyorsa 4 sayfalık <strong>Isı Gider Paylaşım</strong> formatı otomatik kullanılır.<br>Boş bırakırsanız varsayılan: <code>ısı gider</code>, <code>isi gider</code></p>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Extra Option Label', 'quotepress' ); ?></th>
-                <td>
-                  <input type="text" name="extra_option_label" value="<?php echo esc_attr( $s['extra_option_label'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. Communication Type', 'quotepress' ); ?>">
-                  <p class="qp-hint"><?php esc_html_e( 'Optional extra question shown when specific products are selected. Leave blank to disable.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Extra Option Choices', 'quotepress' ); ?></th>
-                <td>
-                  <textarea name="extra_option_items" rows="4"><?php echo esc_textarea( $s['extra_option_items'] ?? '' ); ?></textarea>
-                  <p class="qp-hint"><?php esc_html_e( 'One choice per line.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Show Extra Option When', 'quotepress' ); ?></th>
-                <td>
-                  <textarea name="extra_option_trigger" rows="3"><?php echo esc_textarea( $s['extra_option_trigger'] ?? '' ); ?></textarea>
-                  <p class="qp-hint"><?php esc_html_e( 'Product names (one per line) that trigger the extra option. Must match categories exactly.', 'quotepress' ); ?></p>
-                </td>
-              </tr>
-            </table>
-          </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Recipient Email', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="recipient_email" value="<?php echo esc_attr( $s['recipient_email'] ?? '' ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'New quote request notifications go here. Separate multiple with commas.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Mail Footer', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <textarea class="qp-input" name="mail_footer" rows="3"><?php echo esc_textarea( $s['mail_footer'] ?? '' ); ?></textarea>
+                </div>
+            </div>
+        </div>
 
-          <!-- Design -->
-          <div class="qp-card qp-full">
-            <h2>🎨 <?php esc_html_e( 'Design & Appearance', 'quotepress' ); ?></h2>
-            <table>
-              <tr>
-                <th><?php esc_html_e( 'Color Theme', 'quotepress' ); ?></th>
-                <td>
-                  <div class="qp-theme-grid">
-                    <?php foreach ( $themes as $key => $t ) :
-                        $color  = $key === 'custom' ? ( $s['custom_color'] ?? '#2e8b2e' ) : $t['primary'];
-                        $active = ( $s['color_theme'] ?? 'green' ) === $key ? 'active' : '';
-                    ?>
-                    <label class="qp-theme-btn <?php echo $active; ?>" style="--qp-primary:<?php echo esc_attr($color); ?>">
-                      <input type="radio" name="color_theme" value="<?php echo esc_attr($key); ?>"
-                             <?php checked( $s['color_theme'] ?? 'green', $key ); ?> style="display:none">
-                      <span class="qp-swatch" style="background:<?php echo esc_attr($color); ?>;"></span>
-                      <?php echo esc_html( $t['label'] ); ?>
-                    </label>
-                    <?php endforeach; ?>
-                  </div>
-                  <div style="margin-top:12px;" id="qp-custom-color-wrap" <?php echo ( ($s['color_theme']??'green') !== 'custom' ) ? 'style="display:none"' : ''; ?>>
-                    <input type="text" name="custom_color" class="qp-color-picker"
-                           value="<?php echo esc_attr( $s['custom_color'] ?? '#2e8b2e' ); ?>">
-                  </div>
-                  <script>
-                  document.querySelectorAll('input[name="color_theme"]').forEach(function(r){
-                    r.addEventListener('change',function(){
-                      var w = document.getElementById('qp-custom-color-wrap');
-                      w.style.display = this.value === 'custom' ? 'block' : 'none';
-                      document.querySelectorAll('.qp-theme-btn').forEach(function(b){ b.classList.remove('active'); });
-                      this.closest('.qp-theme-btn').classList.add('active');
-                    });
-                  });
-                  </script>
-                </td>
-              </tr>
-              <tr>
-                <th><?php esc_html_e( 'Panel URL Slug', 'quotepress' ); ?></th>
-                <td>
-                  <input type="text" name="panel_slug" value="<?php echo esc_attr( $slug ); ?>" style="max-width:280px;">
-                  <p class="qp-hint"><?php printf( esc_html__( 'Panel will be accessible at: %s', 'quotepress' ), '<strong>' . esc_url( home_url('/'.$slug.'/') ) . '</strong>' ); ?></p>
-                </td>
-              </tr>
-            </table>
-          </div>
+        <!-- ── Pricing ───────────────────────────────────────────── -->
+        <div class="qp-card">
+            <div class="qp-card-title">💰 <?php esc_html_e( 'Pricing', 'quotepress' ); ?></div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Currencies', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div class="qp-chip-wrap">
+                        <div class="qp-chips" id="qp-chips-currencies"></div>
+                        <div class="qp-chip-add-row">
+                            <input type="text" id="qp-add-currencies" class="qp-chip-add-input" data-field="currencies"
+                                   placeholder="<?php esc_attr_e( 'e.g. USD', 'quotepress' ); ?>" maxlength="10">
+                            <button type="button" class="qp-chip-add-btn" onclick="qpAddChip('currencies')">
+                                + <?php esc_html_e( 'Add', 'quotepress' ); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="currencies" id="qp-hidden-currencies" value="<?php echo esc_attr( implode( "\n", $currencies ) ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'Currency codes available when preparing a quote (USD, EUR, TRY…)', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Default Currency', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <select class="qp-input" name="default_currency" id="qp-sel-default_currency" style="max-width:180px;">
+                        <?php foreach ( $currencies as $cur ) : ?>
+                        <option value="<?php echo esc_attr($cur); ?>" <?php selected( $def_cur, $cur ); ?>><?php echo esc_html($cur); ?></option>
+                        <?php endforeach; ?>
+                        <?php if ( $def_cur && ! in_array( $def_cur, $currencies, true ) ) : ?>
+                        <option value="<?php echo esc_attr($def_cur); ?>" selected><?php echo esc_html($def_cur); ?></option>
+                        <?php endif; ?>
+                    </select>
+                    <p class="qp-hint"><?php esc_html_e( 'Pre-selected when the quote panel opens. Updates automatically when you add/remove currencies above.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Default VAT', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <select class="qp-input" name="default_vat" style="max-width:180px;">
+                        <?php foreach ( $vat_options as $val => $label ) : ?>
+                        <option value="<?php echo esc_attr($val); ?>" <?php selected( $def_vat, (string)$val ); ?>><?php echo esc_html($label); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="qp-hint"><?php esc_html_e( 'Pre-selected VAT rate on the quote panel.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Validity', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input class="qp-input" type="number" name="validity_days" value="<?php echo esc_attr( $s['validity_days'] ?? '30' ); ?>" min="1" style="max-width:110px;">
+                        <span style="font-size:13px;color:#888;"><?php esc_html_e( 'days', 'quotepress' ); ?></span>
+                    </div>
+                    <p class="qp-hint"><?php esc_html_e( 'Expiry date shown on the PDF quote.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Quote Number', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input class="qp-input" type="text" name="quote_number_prefix"
+                               value="<?php echo esc_attr( $s['quote_number_prefix'] ?? '' ); ?>"
+                               style="max-width:90px;" placeholder="<?php esc_attr_e( 'Prefix', 'quotepress' ); ?>">
+                        <input class="qp-input" type="number" name="quote_number_start"
+                               value="<?php echo esc_attr( $s['quote_number_start'] ?? '1' ); ?>"
+                               style="max-width:100px;" min="1" placeholder="<?php esc_attr_e( 'Start', 'quotepress' ); ?>">
+                    </div>
+                    <p class="qp-hint"><?php esc_html_e( 'Prefix + start number. Example: QP- + 100 → QP-0100', 'quotepress' ); ?></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Products & Options ────────────────────────────────── -->
+        <div class="qp-card">
+            <div class="qp-card-title">📦 <?php esc_html_e( 'Products & Options', 'quotepress' ); ?></div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Product Categories', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div class="qp-chip-wrap">
+                        <div class="qp-chips" id="qp-chips-product_categories"></div>
+                        <div class="qp-chip-add-row">
+                            <input type="text" id="qp-add-product_categories" class="qp-chip-add-input" data-field="product_categories"
+                                   placeholder="<?php esc_attr_e( 'e.g. Air Conditioner', 'quotepress' ); ?>">
+                            <button type="button" class="qp-chip-add-btn" onclick="qpAddChip('product_categories')">
+                                + <?php esc_html_e( 'Add', 'quotepress' ); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="product_categories" id="qp-hidden-product_categories" value="<?php echo esc_attr( implode( "\n", $categories ) ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'Appear in the quote request form dropdown.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Detailed PDF Triggers', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div class="qp-chip-wrap">
+                        <div class="qp-chips" id="qp-chips-detailed_format_triggers"></div>
+                        <div class="qp-chip-add-row">
+                            <input type="text" id="qp-add-detailed_format_triggers" class="qp-chip-add-input" data-field="detailed_format_triggers"
+                                   placeholder="<?php esc_attr_e( 'e.g. heat cost', 'quotepress' ); ?>">
+                            <button type="button" class="qp-chip-add-btn" onclick="qpAddChip('detailed_format_triggers')">
+                                + <?php esc_html_e( 'Add', 'quotepress' ); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="detailed_format_triggers" id="qp-hidden-detailed_format_triggers" value="<?php echo esc_attr( implode( "\n", $det_triggers ) ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'If a product name contains any keyword, the 4-page detailed PDF is used. Leave empty for defaults (ısı gider, heat cost).', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Extra Option Label', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="extra_option_label"
+                           value="<?php echo esc_attr( $s['extra_option_label'] ?? '' ); ?>"
+                           placeholder="<?php esc_attr_e( 'e.g. Communication Type', 'quotepress' ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'Label for the extra question on the form. Leave blank to disable entirely.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Extra Option Choices', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div class="qp-chip-wrap">
+                        <div class="qp-chips" id="qp-chips-extra_option_items"></div>
+                        <div class="qp-chip-add-row">
+                            <input type="text" id="qp-add-extra_option_items" class="qp-chip-add-input" data-field="extra_option_items"
+                                   placeholder="<?php esc_attr_e( 'e.g. Wired', 'quotepress' ); ?>">
+                            <button type="button" class="qp-chip-add-btn" onclick="qpAddChip('extra_option_items')">
+                                + <?php esc_html_e( 'Add', 'quotepress' ); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="extra_option_items" id="qp-hidden-extra_option_items" value="<?php echo esc_attr( implode( "\n", $extra_items ) ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'Radio button choices for the extra option.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Show Extra Option When', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div class="qp-check-group" id="qp-trigger-wrap">
+                        <?php if ( empty( $categories ) ) : ?>
+                        <span style="color:#aaa;font-size:12px;font-style:italic;"><?php esc_html_e( 'Add product categories first.', 'quotepress' ); ?></span>
+                        <?php else : foreach ( $categories as $cat ) : ?>
+                        <label>
+                            <input type="checkbox" name="__trigger_check[]" value="<?php echo esc_attr($cat); ?>"
+                                   onchange="qpSyncTriggers()"
+                                   <?php checked( in_array( $cat, $triggers, true ) ); ?>>
+                            <?php echo esc_html($cat); ?>
+                        </label>
+                        <?php endforeach; endif; ?>
+                    </div>
+                    <input type="hidden" name="extra_option_trigger" id="qp-hidden-extra_option_trigger" value="<?php echo esc_attr( implode( "\n", $triggers ) ); ?>">
+                    <p class="qp-hint"><?php esc_html_e( 'The extra option question appears when any checked product is added.', 'quotepress' ); ?></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Design ────────────────────────────────────────────── -->
+        <div class="qp-card qp-full">
+            <div class="qp-card-title">🎨 <?php esc_html_e( 'Design & Appearance', 'quotepress' ); ?></div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Color Theme', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <div class="qp-theme-grid">
+                        <?php foreach ( $themes as $key => $t ) :
+                            $color  = $key === 'custom' ? ( $s['custom_color'] ?? '#2e8b2e' ) : $t['primary'];
+                            $active = ( $s['color_theme'] ?? 'green' ) === $key ? 'active' : '';
+                        ?>
+                        <label class="qp-theme-btn <?php echo $active; ?>">
+                            <input type="radio" name="color_theme" value="<?php echo esc_attr($key); ?>"
+                                   <?php checked( $s['color_theme'] ?? 'green', $key ); ?> style="display:none">
+                            <span class="qp-swatch" style="background:<?php echo esc_attr($color); ?>;"></span>
+                            <?php echo esc_html( $t['label'] ); ?>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <div id="qp-custom-color-wrap" style="margin-top:10px;<?php echo ( ($s['color_theme']??'green') !== 'custom' ) ? 'display:none;' : ''; ?>">
+                        <input type="text" name="custom_color" class="qp-color-picker" value="<?php echo esc_attr( $s['custom_color'] ?? '#2e8b2e' ); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <div class="qp-row">
+                <label><?php esc_html_e( 'Panel URL Slug', 'quotepress' ); ?></label>
+                <div class="qp-field">
+                    <input class="qp-input" type="text" name="panel_slug" value="<?php echo esc_attr( $slug ); ?>" style="max-width:300px;">
+                    <p class="qp-hint"><?php printf( esc_html__( 'Quote panel will be at: %s', 'quotepress' ), '<strong>' . esc_url( home_url('/'.$slug.'/') ) . '</strong>' ); ?></p>
+                </div>
+            </div>
+        </div>
 
         </div><!-- /grid -->
 
         <div style="margin-top:20px;">
-          <?php submit_button( __( 'Save Settings', 'quotepress' ), 'primary large' ); ?>
+            <?php submit_button( __( 'Save Settings', 'quotepress' ), 'primary large' ); ?>
         </div>
 
         </form>
 
         <div class="qp-info-bar">
-          <strong><?php esc_html_e( 'Form Shortcode:', 'quotepress' ); ?></strong>
-          <code>[quotepress_form]</code> &nbsp;—&nbsp;
-          <?php esc_html_e( 'Add this shortcode to any page to display the request form.', 'quotepress' ); ?>
-          &nbsp;|&nbsp;
-          <strong><?php esc_html_e( 'Quote Panel:', 'quotepress' ); ?></strong>
-          <a href="<?php echo esc_url( home_url('/'.$slug.'/') ); ?>" target="_blank">
-            <?php echo esc_url( home_url('/'.$slug.'/') ); ?> →
-          </a>
+            <strong><?php esc_html_e( 'Form Shortcode:', 'quotepress' ); ?></strong>
+            <code>[quotepress_form]</code> &nbsp;—&nbsp;
+            <?php esc_html_e( 'Add to any page to display the quote request form.', 'quotepress' ); ?>
+            &nbsp;|&nbsp;
+            <strong><?php esc_html_e( 'Quote Panel:', 'quotepress' ); ?></strong>
+            <a href="<?php echo esc_url( home_url('/'.$slug.'/') ); ?>" target="_blank">
+                <?php echo esc_url( home_url('/'.$slug.'/') ); ?> →
+            </a>
         </div>
         </div>
+
+        <script>
+        /* ── Chip state ─────────────────────────────────────────── */
+        var QP_CHIPS = {
+            currencies:               <?php echo wp_json_encode( $currencies ); ?>,
+            product_categories:       <?php echo wp_json_encode( $categories ); ?>,
+            extra_option_items:       <?php echo wp_json_encode( $extra_items ); ?>,
+            detailed_format_triggers: <?php echo wp_json_encode( $det_triggers ); ?>
+        };
+
+        function qpEsc(s){
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function qpRenderChips(field){
+            var el = document.getElementById('qp-chips-' + field);
+            if (!el) return;
+            el.innerHTML = QP_CHIPS[field].map(function(val,i){
+                return '<span class="qp-chip">' + qpEsc(val)
+                    + '<button type="button" class="qp-chip-rm" title="<?php echo esc_js( __( 'Remove', 'quotepress' ) ); ?>" onclick="qpRemoveChip(\'' + field + '\',' + i + ')">×</button>'
+                    + '</span>';
+            }).join('');
+            qpSyncHidden(field);
+            if (field === 'currencies')         qpSyncCurrencySelect();
+            if (field === 'product_categories') qpRebuildTriggers();
+        }
+
+        function qpAddChip(field){
+            var input = document.getElementById('qp-add-' + field);
+            var val   = input.value.trim();
+            if (!val) return;
+            if (QP_CHIPS[field].indexOf(val) === -1){
+                QP_CHIPS[field].push(val);
+                qpRenderChips(field);
+            }
+            input.value = '';
+            input.focus();
+        }
+
+        function qpRemoveChip(field, idx){
+            QP_CHIPS[field].splice(idx, 1);
+            qpRenderChips(field);
+        }
+
+        function qpSyncHidden(field){
+            var el = document.getElementById('qp-hidden-' + field);
+            if (el) el.value = QP_CHIPS[field].join('\n');
+        }
+
+        function qpSyncCurrencySelect(){
+            var sel = document.getElementById('qp-sel-default_currency');
+            if (!sel) return;
+            var prev = sel.value;
+            sel.innerHTML = '';
+            QP_CHIPS['currencies'].forEach(function(c){
+                var o = document.createElement('option');
+                o.value = c; o.textContent = c;
+                if (c === prev) o.selected = true;
+                sel.appendChild(o);
+            });
+        }
+
+        function qpRebuildTriggers(){
+            var wrap   = document.getElementById('qp-trigger-wrap');
+            var hidden = document.getElementById('qp-hidden-extra_option_trigger');
+            if (!wrap || !hidden) return;
+            var checked = hidden.value.split('\n').filter(Boolean);
+            wrap.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){ if (checked.indexOf(cb.value)===-1) checked.push(cb.value); });
+            if (QP_CHIPS['product_categories'].length === 0){
+                wrap.innerHTML = '<span style="color:#aaa;font-size:12px;font-style:italic;"><?php echo esc_js( __( 'Add product categories first.', 'quotepress' ) ); ?></span>';
+                hidden.value = '';
+                return;
+            }
+            wrap.innerHTML = QP_CHIPS['product_categories'].map(function(cat){
+                var chk = checked.indexOf(cat) !== -1 ? ' checked' : '';
+                return '<label><input type="checkbox" name="__trigger_check[]" value="' + qpEsc(cat) + '" onchange="qpSyncTriggers()"' + chk + '> ' + qpEsc(cat) + '</label>';
+            }).join('');
+            qpSyncTriggers();
+        }
+
+        function qpSyncTriggers(){
+            var wrap   = document.getElementById('qp-trigger-wrap');
+            var hidden = document.getElementById('qp-hidden-extra_option_trigger');
+            if (!wrap || !hidden) return;
+            var vals = [];
+            wrap.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){ vals.push(cb.value); });
+            hidden.value = vals.join('\n');
+        }
+
+        /* ── Color theme ────────────────────────────────────────── */
+        document.querySelectorAll('input[name="color_theme"]').forEach(function(r){
+            r.addEventListener('change', function(){
+                document.getElementById('qp-custom-color-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+                document.querySelectorAll('.qp-theme-btn').forEach(function(b){ b.classList.remove('active'); });
+                this.closest('.qp-theme-btn').classList.add('active');
+            });
+        });
+
+        /* ── Logo media picker ──────────────────────────────────── */
+        jQuery(function($){
+            var frame;
+            $('#qp-logo-btn').on('click', function(){
+                if (frame){ frame.open(); return; }
+                frame = wp.media({ title:'<?php echo esc_js( __( "Choose Logo", "quotepress" ) ); ?>', button:{ text:'<?php echo esc_js( __( "Use this image", "quotepress" ) ); ?>' }, multiple:false });
+                frame.on('select', function(){
+                    var att  = frame.state().get('selection').first().toJSON();
+                    var prev = att.sizes && att.sizes.medium ? att.sizes.medium.url : att.url;
+                    $('#qp-logo-id').val(att.id);
+                    $('#qp-logo-preview').html('<img src="'+prev+'" style="max-height:60px;max-width:200px;border:1px solid #ddd;border-radius:4px;padding:4px;">');
+                    $('#qp-logo-remove').show();
+                });
+                frame.open();
+            });
+            $('#qp-logo-remove').on('click', function(){ $('#qp-logo-id').val(''); $('#qp-logo-preview').html(''); $(this).hide(); });
+        });
+
+        /* ── Init on load ───────────────────────────────────────── */
+        document.addEventListener('DOMContentLoaded', function(){
+            ['currencies','product_categories','extra_option_items','detailed_format_triggers'].forEach(qpRenderChips);
+            document.querySelectorAll('.qp-chip-add-input').forEach(function(inp){
+                inp.addEventListener('keydown', function(e){
+                    if (e.key === 'Enter'){ e.preventDefault(); qpAddChip(this.dataset.field); }
+                });
+            });
+        });
+        </script>
         <?php
     }
     /* ── Şablon kaydet ──────────────────────────────────────── */
