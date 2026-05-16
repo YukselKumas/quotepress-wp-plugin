@@ -116,13 +116,12 @@ class QuotePress_Report {
             $grand = floatval( $qd['grand_total'] ?? 0 );
             $pname = $r->project_name ?: __( '(Proje adı yok)', 'quotepress' );
 
-            match ( $r->status ) {
-                'pending' => $pending_count++,
-                'quoted'  => $quoted_count++,
-                'won'     => $won_count++,
-                'lost'    => $lost_count++,
-                default   => null,
-            };
+            switch ( $r->status ) {
+                case 'pending': $pending_count++; break;
+                case 'quoted':  $quoted_count++;  break;
+                case 'won':     $won_count++;     break;
+                case 'lost':    $lost_count++;    break;
+            }
 
             if ( in_array( $r->status, [ 'quoted', 'won', 'lost' ], true ) && $grand > 0 ) {
                 $total_value += $grand;
