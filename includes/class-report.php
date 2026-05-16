@@ -11,8 +11,8 @@ class QuotePress_Report {
     public static function register_menu() {
         add_submenu_page(
             'quotepress-settings',
-            __( 'Reports', 'quotepress' ),
-            '📊 ' . __( 'Reports', 'quotepress' ),
+            __( 'Raporlar', 'quotepress' ),
+            '📊 ' . __( 'Raporlar', 'quotepress' ),
             'manage_options',
             'quotepress-reports',
             [ __CLASS__, 'render' ]
@@ -78,7 +78,7 @@ class QuotePress_Report {
         foreach ( $requests as $r ) {
             $qd    = $r->quote_data ? ( json_decode( $r->quote_data, true ) ?: [] ) : [];
             $grand = floatval( $qd['grand_total'] ?? 0 );
-            $pname = $r->project_name ?: __( '(No project name)', 'quotepress' );
+            $pname = $r->project_name ?: __( '(Proje adı yok)', 'quotepress' );
 
             if ( $r->status === 'pending' ) {
                 $pending_count++;
@@ -118,7 +118,7 @@ class QuotePress_Report {
         <div class="wrap" style="max-width:1100px;">
         <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
             <span style="background:<?php echo esc_attr($primary); ?>;color:#fff;padding:4px 14px;border-radius:6px;font-size:15px;">QuotePress</span>
-            <?php esc_html_e( 'Reports', 'quotepress' ); ?>
+            <?php esc_html_e( 'Raporlar', 'quotepress' ); ?>
         </h1>
 
         <style>
@@ -152,19 +152,19 @@ class QuotePress_Report {
         <div class="qpr-stats">
             <div class="qpr-stat">
                 <div class="n"><?php echo $total_count; ?></div>
-                <div class="l"><?php esc_html_e( 'Total Requests', 'quotepress' ); ?></div>
+                <div class="l"><?php esc_html_e( 'Toplam Talep', 'quotepress' ); ?></div>
             </div>
             <div class="qpr-stat">
                 <div class="n orange"><?php echo $pending_count; ?></div>
-                <div class="l"><?php esc_html_e( 'Pending', 'quotepress' ); ?></div>
+                <div class="l"><?php esc_html_e( 'Beklemede', 'quotepress' ); ?></div>
             </div>
             <div class="qpr-stat">
                 <div class="n"><?php echo $quoted_count; ?></div>
-                <div class="l"><?php esc_html_e( 'Quoted', 'quotepress' ); ?></div>
+                <div class="l"><?php esc_html_e( 'Tekliflendirildi', 'quotepress' ); ?></div>
             </div>
             <div class="qpr-stat">
                 <div class="n" style="font-size:18px;"><?php echo number_format( $total_value, 2, '.', ',' ); ?></div>
-                <div class="l"><?php esc_html_e( 'Total Quoted Value', 'quotepress' ); ?> (<?php echo esc_html( $def_currency ); ?>)</div>
+                <div class="l"><?php esc_html_e( 'Toplam Teklif Tutarı', 'quotepress' ); ?> (<?php echo esc_html( $def_currency ); ?>)</div>
             </div>
         </div>
 
@@ -172,44 +172,44 @@ class QuotePress_Report {
         <form method="get" class="qpr-filters">
             <input type="hidden" name="page" value="quotepress-reports">
             <div>
-                <label><?php esc_html_e( 'Search', 'quotepress' ); ?></label>
+                <label><?php esc_html_e( 'Ara', 'quotepress' ); ?></label>
                 <input type="text" name="search" value="<?php echo esc_attr( $search ); ?>"
-                    placeholder="<?php esc_attr_e( 'Project or company...', 'quotepress' ); ?>" style="width:200px;">
+                    placeholder="<?php esc_attr_e( 'Proje veya firma...', 'quotepress' ); ?>" style="width:200px;">
             </div>
             <div>
-                <label><?php esc_html_e( 'Status', 'quotepress' ); ?></label>
+                <label><?php esc_html_e( 'Durum', 'quotepress' ); ?></label>
                 <select name="status">
-                    <option value=""><?php esc_html_e( 'All', 'quotepress' ); ?></option>
-                    <option value="pending" <?php selected( $status_filter, 'pending' ); ?>><?php esc_html_e( 'Pending', 'quotepress' ); ?></option>
-                    <option value="quoted"  <?php selected( $status_filter, 'quoted'  ); ?>><?php esc_html_e( 'Quoted',  'quotepress' ); ?></option>
+                    <option value=""><?php esc_html_e( 'Tümü', 'quotepress' ); ?></option>
+                    <option value="pending" <?php selected( $status_filter, 'pending' ); ?>><?php esc_html_e( 'Beklemede', 'quotepress' ); ?></option>
+                    <option value="quoted"  <?php selected( $status_filter, 'quoted'  ); ?>><?php esc_html_e( 'Tekliflendirildi', 'quotepress' ); ?></option>
                 </select>
             </div>
             <div>
-                <label><?php esc_html_e( 'From', 'quotepress' ); ?></label>
+                <label><?php esc_html_e( 'Başlangıç Tarihi', 'quotepress' ); ?></label>
                 <input type="date" name="date_from" value="<?php echo esc_attr( $date_from ); ?>">
             </div>
             <div>
-                <label><?php esc_html_e( 'To', 'quotepress' ); ?></label>
+                <label><?php esc_html_e( 'Bitiş Tarihi', 'quotepress' ); ?></label>
                 <input type="date" name="date_to" value="<?php echo esc_attr( $date_to ); ?>">
             </div>
             <div style="display:flex;gap:8px;">
-                <button type="submit" class="qpr-btn"><?php esc_html_e( 'Filter', 'quotepress' ); ?></button>
-                <a href="?page=quotepress-reports" class="qpr-btn sec"><?php esc_html_e( 'Reset', 'quotepress' ); ?></a>
+                <button type="submit" class="qpr-btn"><?php esc_html_e( 'Filtrele', 'quotepress' ); ?></button>
+                <a href="?page=quotepress-reports" class="qpr-btn sec"><?php esc_html_e( 'Temizle', 'quotepress' ); ?></a>
             </div>
         </form>
 
         <!-- Project name summary -->
         <?php if ( ! empty( $project_groups ) ) : ?>
         <div class="qpr-card">
-            <div class="qpr-card-title"><?php esc_html_e( 'Summary by Project Name', 'quotepress' ); ?></div>
+            <div class="qpr-card-title"><?php esc_html_e( 'Proje Adına Göre Özet', 'quotepress' ); ?></div>
             <div style="overflow-x:auto;">
             <table class="qpr-table">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e( 'Project Name', 'quotepress' ); ?></th>
-                        <th style="text-align:center;"><?php esc_html_e( 'Requests', 'quotepress' ); ?></th>
-                        <th style="text-align:center;"><?php esc_html_e( 'Quoted', 'quotepress' ); ?></th>
-                        <th style="text-align:right;"><?php esc_html_e( 'Total Quoted Value', 'quotepress' ); ?></th>
+                        <th><?php esc_html_e( 'Proje Adı', 'quotepress' ); ?></th>
+                        <th style="text-align:center;"><?php esc_html_e( 'Talepler', 'quotepress' ); ?></th>
+                        <th style="text-align:center;"><?php esc_html_e( 'Tekliflendi', 'quotepress' ); ?></th>
+                        <th style="text-align:right;"><?php esc_html_e( 'Toplam Tutar', 'quotepress' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -235,29 +235,29 @@ class QuotePress_Report {
         <div class="qpr-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
                 <div class="qpr-card-title" style="margin:0;border:0;padding:0;">
-                    <?php esc_html_e( 'All Requests', 'quotepress' ); ?>
+                    <?php esc_html_e( 'Tüm Talepler', 'quotepress' ); ?>
                     <span style="font-weight:400;color:#aaa;font-size:12px;margin-left:4px;">(<?php echo $total_count; ?>)</span>
                 </div>
                 <a href="<?php echo esc_url( $csv_url ); ?>" class="qpr-btn sec" style="font-size:12px;padding:6px 14px;">
-                    ↓ <?php esc_html_e( 'Export CSV', 'quotepress' ); ?>
+                    ↓ <?php esc_html_e( 'CSV İndir', 'quotepress' ); ?>
                 </a>
             </div>
 
             <?php if ( empty( $requests ) ) : ?>
-                <div class="qpr-empty"><?php esc_html_e( 'No requests found.', 'quotepress' ); ?></div>
+                <div class="qpr-empty"><?php esc_html_e( 'Talep bulunamadı.', 'quotepress' ); ?></div>
             <?php else : ?>
             <div style="overflow-x:auto;">
             <table class="qpr-table">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th><?php esc_html_e( 'Project Name', 'quotepress' ); ?></th>
-                        <th><?php esc_html_e( 'Company', 'quotepress' ); ?></th>
-                        <th><?php esc_html_e( 'Contact', 'quotepress' ); ?></th>
-                        <th style="text-align:center;"><?php esc_html_e( 'Items', 'quotepress' ); ?></th>
-                        <th><?php esc_html_e( 'Status', 'quotepress' ); ?></th>
-                        <th style="text-align:right;"><?php esc_html_e( 'Quoted Total', 'quotepress' ); ?></th>
-                        <th><?php esc_html_e( 'Date', 'quotepress' ); ?></th>
+                        <th><?php esc_html_e( 'Proje Adı', 'quotepress' ); ?></th>
+                        <th><?php esc_html_e( 'Firma', 'quotepress' ); ?></th>
+                        <th><?php esc_html_e( 'İletişim', 'quotepress' ); ?></th>
+                        <th style="text-align:center;"><?php esc_html_e( 'Ürünler', 'quotepress' ); ?></th>
+                        <th><?php esc_html_e( 'Durum', 'quotepress' ); ?></th>
+                        <th style="text-align:right;"><?php esc_html_e( 'Teklif Tutarı', 'quotepress' ); ?></th>
+                        <th><?php esc_html_e( 'Tarih', 'quotepress' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -290,9 +290,9 @@ class QuotePress_Report {
                     </td>
                     <td>
                         <?php if ( $r->status === 'pending' ) : ?>
-                            <span class="qpr-badge pending"><?php esc_html_e( 'Pending', 'quotepress' ); ?></span>
+                            <span class="qpr-badge pending"><?php esc_html_e( 'Beklemede', 'quotepress' ); ?></span>
                         <?php else : ?>
-                            <span class="qpr-badge quoted"><?php esc_html_e( 'Quoted', 'quotepress' ); ?></span>
+                            <span class="qpr-badge quoted"><?php esc_html_e( 'Tekliflendirildi', 'quotepress' ); ?></span>
                         <?php endif; ?>
                     </td>
                     <td style="text-align:right;font-weight:600;color:<?php echo esc_attr($primary); ?>;">
@@ -339,8 +339,8 @@ class QuotePress_Report {
 
         $out = fopen( 'php://output', 'w' );
         fputcsv( $out, [
-            'ID', 'Project Name', 'Company', 'Contact', 'Email', 'Phone',
-            'City', 'Country', 'Items', 'Status', 'Quoted Total', 'Currency', 'Date',
+            'ID', 'Proje Adı', 'Firma', 'İletişim Kişisi', 'E-posta', 'Telefon',
+            'Şehir', 'Ülke', 'Ürünler', 'Durum', 'Teklif Tutarı', 'Para Birimi', 'Tarih',
         ] );
 
         foreach ( $requests as $r ) {
