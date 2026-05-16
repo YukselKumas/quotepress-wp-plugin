@@ -333,13 +333,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         </div>
         <input type="hidden" id="qpCurrency" value="<?php echo esc_attr($def_currency); ?>">
 
-        <!-- Hitap seçimi -->
+        <!-- Salutation -->
         <div class="qp-vat-row" style="margin-bottom:10px;">
-          <label style="font-size:13px;font-weight:600;color:#666;">Hitap:</label>
+          <label style="font-size:13px;font-weight:600;color:#666;"><?php esc_html_e( 'Salutation:', 'quotepress' ); ?></label>
           <select id="qpSalutation" style="padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
-            <option value="neutral" <?php selected($request->contact_salutation??'neutral','neutral'); ?>>Sayın [Ad Soyad]</option>
-            <option value="female"  <?php selected($request->contact_salutation??'neutral','female');  ?>>Sayın [Ad Soyad] Hanım</option>
-            <option value="male"    <?php selected($request->contact_salutation??'neutral','male');    ?>>Sayın [Ad Soyad] Bey</option>
+            <option value="neutral" <?php selected($request->contact_salutation??'neutral','neutral'); ?>><?php esc_html_e( 'Dear [Name]',        'quotepress' ); ?></option>
+            <option value="female"  <?php selected($request->contact_salutation??'neutral','female');  ?>><?php esc_html_e( 'Dear Ms. [Name]',     'quotepress' ); ?></option>
+            <option value="male"    <?php selected($request->contact_salutation??'neutral','male');    ?>><?php esc_html_e( 'Dear Mr. [Name]',     'quotepress' ); ?></option>
           </select>
           <span style="font-size:11px;color:#aaa;margin-left:4px;"><?php echo esc_html($request->contact_name); ?></span>
         </div>
@@ -362,10 +362,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div class="qp-price-grid" style="margin-bottom:8px;">
           <div class="hdr"><?php esc_html_e('Product','quotepress'); ?></div>
           <div class="hdr" style="text-align:right;">
-            Birim Fiyat
+            <?php esc_html_e( 'Unit Price', 'quotepress' ); ?>
             <select id="qpPriceType" onchange="qpUpdatePriceLabel()" style="font-size:10px;border:1px solid #ddd;border-radius:4px;padding:2px 4px;margin-left:4px;font-weight:400;color:#666;cursor:pointer;">
-              <option value="excl">KDV Hariç</option>
-              <option value="incl">KDV Dahil</option>
+              <option value="excl"><?php esc_html_e( 'Excl. VAT', 'quotepress' ); ?></option>
+              <option value="incl"><?php esc_html_e( 'Incl. VAT', 'quotepress' ); ?></option>
             </select>
           </div>
           <div class="hdr" style="text-align:center;"><?php esc_html_e('Qty','quotepress'); ?></div>
@@ -465,7 +465,7 @@ function qpCalc() {
         if (ptEl.value === 'incl' && vat > 0) {
             var net = sub / (1 + vat/100);
             var v2  = sub - net;
-            noteEl.textContent = 'Birim fiyatlar KDV dahil. Net: ' + qpFmt(net) + ' + KDV: ' + qpFmt(v2);
+            noteEl.textContent = '<?php echo esc_js( __( 'Unit prices include VAT. Net:', 'quotepress' ) ); ?>' + ' ' + qpFmt(net) + ' + <?php echo esc_js( __( 'VAT:', 'quotepress' ) ); ?>' + ' ' + qpFmt(v2);
             noteEl.style.display = '';
         } else {
             noteEl.style.display = 'none';
