@@ -8,8 +8,10 @@ class QuotePress_Database {
     /* ── Install (activation hook) ─────────────────────────── */
     public static function install() {
         global $wpdb;
-        $table   = $wpdb->prefix . self::TABLE;
-        $charset = $wpdb->get_charset_collate();
+        $table          = $wpdb->prefix . self::TABLE;
+        $services_table = $wpdb->prefix . 'quotepress_services';
+        $offers_table   = $wpdb->prefix . 'quotepress_offers';
+        $charset        = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table} (
             id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -36,6 +38,29 @@ class QuotePress_Database {
             PRIMARY KEY (id)
         ) {$charset};";
 
+        $services_sql = "CREATE TABLE IF NOT EXISTS {$services_table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            title        VARCHAR(255)    NOT NULL,
+            template_key VARCHAR(100)    NOT NULL DEFAULT 'default',
+            unit_label   VARCHAR(100)    NOT NULL DEFAULT '',
+            description  TEXT            NOT NULL,
+            created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id)
+        ) {$charset};";
+
+        $offers_sql = "CREATE TABLE IF NOT EXISTS {$offers_table} (
+            id            BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
+            service_id    BIGINT UNSIGNED  NOT NULL,
+            customer_name VARCHAR(255)     NOT NULL,
+            contact_name  VARCHAR(255)     NOT NULL,
+            quantity      INT              NOT NULL DEFAULT 1,
+            unit_price    DECIMAL(10,2)    NOT NULL DEFAULT 0,
+            total_price   DECIMAL(10,2)    NOT NULL DEFAULT 0,
+            offer_html    LONGTEXT         NOT NULL,
+            created_at    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id)
+        ) {$charset};";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
         dbDelta( $services_sql );
@@ -43,40 +68,10 @@ class QuotePress_Database {
 
         update_option( 'quotepress_db_version', QP_VERSION );
 
-        
-
-        $services_table = $wpdb->prefix . "quotepress_services";
-        $offers_table = $wpdb->prefix . "quotepress_offers";
-
-        $services_sql = "CREATE TABLE IF NOT EXISTS {$services_table} (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            title VARCHAR(255) NOT NULL,
-            template_key VARCHAR(100) NOT NULL DEFAULT 'default',
-            unit_label VARCHAR(100) NOT NULL DEFAULT '',
-            description TEXT NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id)
-        ) {$charset};";
-
-        $offers_sql = "CREATE TABLE IF NOT EXISTS {$offers_table} (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            service_id BIGINT UNSIGNED NOT NULL,
-            customer_name VARCHAR(255) NOT NULL,
-            contact_name VARCHAR(255) NOT NULL,
-            quantity INT NOT NULL DEFAULT 1,
-            unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
-            total_price DECIMAL(10,2) NOT NULL DEFAULT 0,
-            offer_html LONGTEXT NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id)
-        ) {$charset};";
-
-        // Default settings on first install
         if ( ! get_option( 'quotepress_settings' ) ) {
             update_option( 'quotepress_settings', self::default_settings() );
         }
 
-        // Register panel rewrite & flush
         QuotePress_Panel::register_rewrite();
         flush_rewrite_rules();
     }
