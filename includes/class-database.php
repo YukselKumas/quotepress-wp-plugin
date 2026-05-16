@@ -91,7 +91,7 @@ class QuotePress_Database {
             'currencies'          => "USD\nEUR\nGBP\nTRY",
             'default_vat'         => '0',
             'validity_days'       => '30',
-            'mail_footer'         => __( 'This email was sent automatically. Please do not reply.', 'quotepress' ),
+            'mail_footer'         => __( 'Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıtlamayınız.', 'quotepress' ),
             'color_theme'         => 'green',
             'custom_color'        => '#2e8b2e',
             'product_categories'  => "Product A\nProduct B\nProduct C\nOther",
