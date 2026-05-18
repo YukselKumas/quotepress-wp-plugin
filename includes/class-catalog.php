@@ -320,7 +320,7 @@ class QuotePress_Catalog {
         <div class="qpc-wrap wrap">
           <div class="qpc-topbar">
             <h1>📦 Ürün & Hizmet Kataloğu</h1>
-            <button class="button button-primary" onclick="qpcToggleNG()">+ Yeni Grup</button>
+            <button type="button" class="button button-primary" onclick="qpcToggleNG()">+ Yeni Grup</button>
           </div>
           <p class="qpc-desc">Gruplar → ürünler → varyantlar hiyerarşisi. Teklif formundaki açılır menü buradan otomatik güncellenir.</p>
 
@@ -346,8 +346,8 @@ class QuotePress_Catalog {
               <input type="hidden" id="ng-tpl" value="default">
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <button class="qpc-save-btn" onclick="qpcSaveGroup()">✓ Oluştur</button>
-              <button class="qpc-cancel-btn" onclick="qpcToggleNG()">İptal</button>
+              <button type="button" class="qpc-save-btn" onclick="qpcSaveGroup()">✓ Oluştur</button>
+              <button type="button" class="qpc-cancel-btn" onclick="qpcToggleNG()">İptal</button>
               <span id="ng-err" class="qpc-err"></span>
             </div>
           </div>
@@ -361,7 +361,7 @@ class QuotePress_Catalog {
               <option value="">— Grup —</option>
               <?php foreach($groups as $g) echo '<option value="'.esc_attr($g['id']).'">'.esc_html($g['icon']??'').' '.esc_html($g['name']).'</option>'; ?>
             </select>
-            <button class="qpc-import-btn" onclick="qpcImport()">İçe Aktar</button>
+            <button type="button" class="qpc-import-btn" onclick="qpcImport()">İçe Aktar</button>
             <span id="qpc-imp-msg" style="font-size:12px;color:#166534;font-weight:600;"></span>
           </div>
           <?php endif; ?>
@@ -391,8 +391,8 @@ class QuotePress_Catalog {
                     </div>
                   </div>
                   <div class="qpc-gact" onclick="event.stopPropagation()">
-                    <button class="qpb" onclick="qpcOpenEditGroup('<?php echo esc_js($g['id']); ?>','<?php echo esc_js($g['name']); ?>','<?php echo esc_js($g['template']??'default'); ?>','<?php echo esc_js($g['color']??'#1a6eb5'); ?>','<?php echo esc_js($g['icon']??'🔧'); ?>')">✏️ Düzenle</button>
-                    <button class="qpb danger" onclick="qpcDelGroup('<?php echo esc_js($g['id']); ?>','<?php echo esc_js($g['name']); ?>')">🗑️</button>
+                    <button type="button" class="qpb" onclick="qpcOpenEditGroup('<?php echo esc_js($g['id']); ?>','<?php echo esc_js($g['name']); ?>','<?php echo esc_js($g['template']??'default'); ?>','<?php echo esc_js($g['color']??'#1a6eb5'); ?>','<?php echo esc_js($g['icon']??'🔧'); ?>')">✏️ Düzenle</button>
+                    <button type="button" class="qpb danger" onclick="qpcDelGroup('<?php echo esc_js($g['id']); ?>','<?php echo esc_js($g['name']); ?>')">🗑️</button>
                   </div>
                   <span style="color:#ccc;margin-left:6px;" id="qpc-arr-<?php echo esc_attr($g['id']); ?>">▾</span>
                 </div>
@@ -416,9 +416,9 @@ class QuotePress_Catalog {
                       <span class="qpc-item-price"><?php echo $it['default_price'] ? number_format((float)$it['default_price'],2,',','.') : '—'; ?></span>
                       <span class="qpc-item-status <?php echo ($it['active']??true)?'qpc-on':'qpc-off'; ?>"><?php echo ($it['active']??true)?'✓':'Pasif'; ?></span>
                       <div style="display:flex;gap:4px;">
-                        <button class="qpb" onclick="qpcEditItem('<?php echo esc_js($it['id']); ?>','<?php echo esc_js($g['id']); ?>','<?php echo esc_js($it['name']); ?>','<?php echo esc_js($it['unit']??''); ?>','<?php echo esc_js($it['default_price']??''); ?>','<?php echo esc_js($it['desc']??''); ?>',<?php echo ($it['active']??true)?'true':'false'; ?>,<?php echo $img_id; ?>,'<?php echo esc_js($img_url); ?>')" title="Düzenle">✏️</button>
-                        <button class="qpb" onclick="qpcToggleVariants('<?php echo esc_js($it['id']); ?>')" title="Varyantlar">⚙️</button>
-                        <button class="qpb danger" onclick="qpcDelItem('<?php echo esc_js($it['id']); ?>','<?php echo esc_js($it['name']); ?>')" title="Sil">🗑️</button>
+                        <button type="button" class="qpb" onclick="qpcEditItem('<?php echo esc_js($it['id']); ?>','<?php echo esc_js($g['id']); ?>','<?php echo esc_js($it['name']); ?>','<?php echo esc_js($it['unit']??''); ?>','<?php echo esc_js($it['default_price']??''); ?>','<?php echo esc_js($it['desc']??''); ?>',<?php echo ($it['active']??true)?'true':'false'; ?>,<?php echo $img_id; ?>,'<?php echo esc_js($img_url); ?>')" title="Düzenle">✏️</button>
+                        <button type="button" class="qpb" onclick="qpcToggleVariants('<?php echo esc_js($it['id']); ?>')" title="Varyantlar">⚙️</button>
+                        <button type="button" class="qpb danger" onclick="qpcDelItem('<?php echo esc_js($it['id']); ?>','<?php echo esc_js($it['name']); ?>')" title="Sil">🗑️</button>
                       </div>
                     </div>
 
@@ -432,13 +432,13 @@ class QuotePress_Catalog {
                           <input type="text" class="vl" placeholder="Varyant adı (örn: Kablolu)" value="<?php echo esc_attr($v['label']); ?>" data-field="label">
                           <input type="number" class="vp" placeholder="±Fiyat farkı" step="0.01" value="<?php echo esc_attr($v['price_delta']??0); ?>" data-field="price_delta">
                           <label class="vd"><input type="checkbox" <?php echo ($v['is_default']??false)?'checked':''; ?> data-field="is_default"> Varsayılan</label>
-                          <button class="qpb danger" onclick="this.closest('.qpc-vrow').remove()" style="padding:4px 7px;">✕</button>
+                          <button type="button" class="qpb danger" onclick="this.closest('.qpc-vrow').remove()" style="padding:4px 7px;">✕</button>
                         </div>
                         <?php endforeach; ?>
                       </div>
                       <div style="display:flex;gap:8px;margin-top:8px;">
-                        <button class="qpb" onclick="qpcAddVRow('<?php echo esc_js($it['id']); ?>')">+ Varyant Ekle</button>
-                        <button class="qpc-save-btn" style="font-size:12px;padding:5px 12px;" onclick="qpcSaveVariants('<?php echo esc_js($it['id']); ?>')">💾 Kaydet</button>
+                        <button type="button" class="qpb" onclick="qpcAddVRow('<?php echo esc_js($it['id']); ?>')">+ Varyant Ekle</button>
+                        <button type="button" class="qpc-save-btn" style="font-size:12px;padding:5px 12px;" onclick="qpcSaveVariants('<?php echo esc_js($it['id']); ?>')">💾 Kaydet</button>
                       </div>
                     </div>
                     <?php endforeach; ?>
@@ -468,13 +468,13 @@ class QuotePress_Catalog {
                       </div>
                     </div>
                     <div class="qpc-fact">
-                      <button class="qpc-save-btn" onclick="qpcSaveItem('<?php echo esc_js($g['id']); ?>')">✓ Kaydet</button>
-                      <button class="qpc-cancel-btn" onclick="qpcCloseIform('<?php echo esc_js($g['id']); ?>')">İptal</button>
+                      <button type="button" class="qpc-save-btn" onclick="qpcSaveItem('<?php echo esc_js($g['id']); ?>')">✓ Kaydet</button>
+                      <button type="button" class="qpc-cancel-btn" onclick="qpcCloseIform('<?php echo esc_js($g['id']); ?>')">İptal</button>
                       <span id="qpc-fi-err-<?php echo esc_attr($g['id']); ?>" class="qpc-err"></span>
                     </div>
                   </div>
 
-                  <button class="qpc-add-btn" onclick="qpcOpenIform('<?php echo esc_js($g['id']); ?>')">+ Ürün / Hizmet Ekle</button>
+                  <button type="button" class="qpc-add-btn" onclick="qpcOpenIform('<?php echo esc_js($g['id']); ?>')">+ Ürün / Hizmet Ekle</button>
                 </div>
               </div>
               <?php endforeach; ?>
@@ -506,8 +506,8 @@ class QuotePress_Catalog {
               <input type="hidden" id="eg-tpl">
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <button class="qpc-cancel-btn" onclick="qpcCloseEModal()">İptal</button>
-              <button class="qpc-save-btn" onclick="qpcUpdateGroup()">Kaydet</button>
+              <button type="button" class="qpc-cancel-btn" onclick="qpcCloseEModal()">İptal</button>
+              <button type="button" class="qpc-save-btn" onclick="qpcUpdateGroup()">Kaydet</button>
             </div>
           </div>
         </div>
@@ -698,7 +698,7 @@ class QuotePress_Catalog {
             row.innerHTML = '<input type="text" class="vl" placeholder="Varyant adı (örn: Kablolu)" data-field="label">'
                           + '<input type="number" class="vp" placeholder="±Fiyat farkı" step="0.01" data-field="price_delta">'
                           + '<label class="vd"><input type="checkbox" data-field="is_default"> Varsayılan</label>'
-                          + '<button class="qpb danger" onclick="this.closest(\'.qpc-vrow\').remove()" style="padding:4px 7px;">✕</button>';
+                          + '<button type="button" class="qpb danger" onclick="this.closest(\'.qpc-vrow\').remove()" style="padding:4px 7px;">✕</button>';
             c.appendChild(row);
             row.querySelector('input.vl').focus();
         }
