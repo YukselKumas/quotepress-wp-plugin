@@ -361,6 +361,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <?php endif; ?>
       </div>
 
+      <!-- Proje bağlantısı -->
+      <?php
+      $all_projects    = QuotePress_Database::get_projects();
+      $linked_proj_id  = isset( $request->project_id ) ? (int) $request->project_id : 0;
+      ?>
+      <div class="qp-card" id="qpProjCard">
+        <div class="qp-card-t">📁 Proje Bağlantısı</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <select id="qpProjSelect" style="flex:1;min-width:200px;padding:8px 11px;border:1px solid #ddd;border-radius:6px;font-size:13px;"
+                  onchange="qpAssignProject(<?php echo $request->id; ?>)">
+            <option value="0">— Projeye bağlamayın —</option>
+            <?php foreach ( $all_projects as $proj ) : ?>
+            <option value="<?php echo (int) $proj->id; ?>" <?php selected( $linked_proj_id, (int) $proj->id ); ?>>
+              <?php echo esc_html( $proj->name ); ?>
+              <?php if ( $proj->client_name ) echo ' (' . esc_html( $proj->client_name ) . ')'; ?>
+            </option>
+            <?php endforeach; ?>
+          </select>
+          <span id="qpProjAssignMsg" style="font-size:12px;color:var(--qp-primary);display:none;"></span>
+        </div>
+        <?php if ( empty( $all_projects ) ) : ?>
+        <p style="font-size:12px;color:#aaa;margin-top:8px;">
+          Henüz proje tanımlanmamış.
+          <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-projects' ) ); ?>" style="color:var(--qp-primary);">Proje ekle →</a>
+        </p>
+        <?php endif; ?>
+      </div>
+
       <!-- Teklif sonucu (teklif gönderildikten sonra) -->
       <?php if ( $request->status !== 'pending' ) : ?>
       <div class="qp-result <?php echo esc_attr( $request->status ); ?>">
@@ -605,6 +633,29 @@ function qpDelete(id) {
     fetch(qpAjaxUrl, {method:'POST',body:fd})
     .then(function(r){return r.json();})
     .then(function(d){ if (d.success) location.href='<?php echo esc_url( home_url( '/' . $slug . '/' ) ); ?>'; });
+}
+
+function qpAssignProject(requestId) {
+    var projectId = document.getElementById('qpProjSelect').value;
+    var msgEl     = document.getElementById('qpProjAssignMsg');
+    var fd        = new FormData();
+    fd.append('action',     'qp_assign_project');
+    fd.append('request_id', requestId);
+    fd.append('project_id', projectId);
+    fd.append('_wpnonce',   qpPanelNonce);
+    fetch(qpAjaxUrl, {method:'POST', body:fd})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+        msgEl.style.display = 'inline';
+        if (d.success) {
+            msgEl.textContent = '✔ Kaydedildi';
+            msgEl.style.color = '#2e7d32';
+        } else {
+            msgEl.textContent = 'Hata';
+            msgEl.style.color = '#c62828';
+        }
+        setTimeout(function(){ msgEl.style.display = 'none'; }, 2500);
+    });
 }
 
 function qpUpdateStatus(id, status) {
