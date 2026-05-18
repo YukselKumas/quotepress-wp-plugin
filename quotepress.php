@@ -31,6 +31,7 @@ foreach ( [
     'class-mailer',
     'class-pdf',
     'class-report',
+    'class-projects',
 ] as $file ) {
     require_once QP_PATH . 'includes/' . $file . '.php';
 }
@@ -46,6 +47,7 @@ add_action( 'plugins_loaded', function () {
     QuotePress_Panel::init();
     QuotePress_Mailer::init();
     QuotePress_Report::init();
+    QuotePress_Projects::init();
 } );
 
 /* ── Activation / Deactivation ──────────────────────────────── */
