@@ -21,7 +21,7 @@ class QuotePress_Products {
             'quotepress-settings',
             __( 'Ürünler', 'quotepress' ),
             '📦 ' . __( 'Ürünler', 'quotepress' ),
-            'manage_options',
+            QuotePress_Users::CAP,
             'quotepress-products',
             [ __CLASS__, 'render' ]
         );
@@ -53,7 +53,7 @@ class QuotePress_Products {
 
     /* ── AJAX: get single product (for edit modal) ─────────── */
     public static function handle_get() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         $id      = intval( $_GET['product_id'] ?? 0 );
         $product = QuotePress_Database::get_product( $id );
         if ( ! $product ) { wp_send_json_error( 'not_found' ); }
@@ -63,7 +63,7 @@ class QuotePress_Products {
 
     /* ── AJAX: save product ────────────────────────────────── */
     public static function handle_save() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_products_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $id       = intval( $_POST['product_id'] ?? 0 );
@@ -99,7 +99,7 @@ class QuotePress_Products {
 
     /* ── AJAX: delete product ──────────────────────────────── */
     public static function handle_delete() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_products_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $id = intval( $_POST['product_id'] ?? 0 );
@@ -110,7 +110,7 @@ class QuotePress_Products {
 
     /* ── Render admin page ─────────────────────────────────── */
     public static function render() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) return;
 
         global $wpdb;
         $colors       = QuotePress_Settings::active_theme_colors();

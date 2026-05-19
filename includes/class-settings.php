@@ -86,10 +86,13 @@ class QuotePress_Settings {
     }
 
     public static function register_menu() {
+        $cap     = QuotePress_Users::CAP;
+        $adm_cap = 'manage_options';
+
         add_menu_page(
             __( 'QuotePress', 'quotepress' ),
             __( 'QuotePress', 'quotepress' ),
-            'manage_options',
+            $cap,
             'quotepress-settings',
             [ __CLASS__, 'render' ],
             'dashicons-clipboard',
@@ -99,7 +102,7 @@ class QuotePress_Settings {
             'quotepress-settings',
             __( 'Ayarlar', 'quotepress' ),
             __( 'Ayarlar', 'quotepress' ),
-            'manage_options',
+            $adm_cap,
             'quotepress-settings',
             [ __CLASS__, 'render' ]
         );
@@ -107,7 +110,7 @@ class QuotePress_Settings {
             'quotepress-settings',
             __( 'Teklif Paneli', 'quotepress' ),
             __( 'Teklif Paneli', 'quotepress' ),
-            'manage_options',
+            $cap,
             'quotepress-panel-link',
             [ __CLASS__, 'redirect_panel' ]
         );

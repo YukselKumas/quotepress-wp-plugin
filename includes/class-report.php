@@ -13,7 +13,7 @@ class QuotePress_Report {
             'quotepress-settings',
             __( 'Raporlar', 'quotepress' ),
             '📊 ' . __( 'Raporlar', 'quotepress' ),
-            'manage_options',
+            QuotePress_Users::CAP,
             'quotepress-reports',
             [ __CLASS__, 'render' ]
         );
@@ -78,7 +78,7 @@ class QuotePress_Report {
 
     /* ── Render ─────────────────────────────────────────────── */
     public static function render() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) return;
 
         $status_filter     = sanitize_text_field( $_GET['status']         ?? '' );
         $search            = sanitize_text_field( $_GET['search']         ?? '' );
@@ -679,7 +679,7 @@ class QuotePress_Report {
 
     /* ── CSV export (tüm filtrelenmiş sonuçlar) ─────────────── */
     public static function handle_export_csv() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) {
             wp_die( 'Yetkisiz', 403 );
         }
         if ( ! check_ajax_referer( 'qp_export_csv', '_wpnonce', false ) ) {

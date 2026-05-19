@@ -8,10 +8,18 @@ class QuotePress_Users {
     public static function init() {
         add_action( 'admin_menu',                 [ __CLASS__, 'register_menu' ] );
         add_action( 'wp_ajax_qp_toggle_user',     [ __CLASS__, 'handle_toggle' ] );
-        // Restrict admin menu for plugin-only users
         add_action( 'admin_menu',                 [ __CLASS__, 'restrict_admin_menu' ], 999 );
-        // Redirect plugin-only users away from WP dashboard
         add_action( 'admin_init',                 [ __CLASS__, 'redirect_if_no_manage' ] );
+        // Ensure admins always have the plugin cap (so they see the QP menu too)
+        add_filter( 'user_has_cap',               [ __CLASS__, 'grant_cap_to_admins' ], 1, 3 );
+    }
+
+    /* ── Admins automatically get the plugin cap ────────────── */
+    public static function grant_cap_to_admins( $allcaps, $caps, $args ) {
+        if ( ! empty( $allcaps['manage_options'] ) ) {
+            $allcaps[ self::CAP ] = true;
+        }
+        return $allcaps;
     }
 
     public static function register_menu() {
