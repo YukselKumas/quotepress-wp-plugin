@@ -395,13 +395,22 @@ class QuotePress_Report {
 
         <?php
         // Active filter badges
+        $clear_il_url   = add_query_arg( array_merge( $base_args, [ 'view' => 'projects', 'il'          => '' ] ), admin_url( 'admin.php' ) );
+        $clear_ilce_url = add_query_arg( array_merge( $base_args, [ 'view' => 'projects', 'ilce'        => '' ] ), admin_url( 'admin.php' ) );
+        $clear_pst_url  = add_query_arg( array_merge( $base_args, [ 'view' => 'projects', 'proj_status' => '' ] ), admin_url( 'admin.php' ) );
         if ( $filter_il || $filter_ilce || $filter_proj_status ) : ?>
         <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
-            <?php if ( $filter_il ) : ?><span class="qpr-filter-badge">📍 İl: <?php echo esc_html( $filter_il ); ?> <a href="<?php echo esc_url( add_query_arg( [ 'il' => '' ], admin_url( 'admin.php?' . http_build_query( array_merge( $base_args, [ 'view' => 'projects', 'il' => '' ] ) ) ) ); ?>">✕</a></span><?php endif; ?>
-            <?php if ( $filter_ilce ) : ?><span class="qpr-filter-badge">📍 İlçe: <?php echo esc_html( $filter_ilce ); ?> <a href="<?php echo esc_url( add_query_arg( [ 'ilce' => '' ], admin_url( 'admin.php?' . http_build_query( array_merge( $base_args, [ 'view' => 'projects', 'ilce' => '' ] ) ) ) ); ?>">✕</a></span><?php endif; ?>
+            <?php if ( $filter_il ) : ?>
+            <span class="qpr-filter-badge">📍 İl: <?php echo esc_html( $filter_il ); ?> <a href="<?php echo esc_url( $clear_il_url ); ?>">✕</a></span>
+            <?php endif; ?>
+            <?php if ( $filter_ilce ) : ?>
+            <span class="qpr-filter-badge">📍 İlçe: <?php echo esc_html( $filter_ilce ); ?> <a href="<?php echo esc_url( $clear_ilce_url ); ?>">✕</a></span>
+            <?php endif; ?>
             <?php if ( $filter_proj_status ) :
                 $fpl = $proj_status_labels[ $filter_proj_status ] ?? [ 'lbl' => $filter_proj_status ];
-            ?><span class="qpr-filter-badge">Durum: <?php echo esc_html( $fpl['lbl'] ); ?> <a href="<?php echo esc_url( add_query_arg( [ 'proj_status' => '' ], admin_url( 'admin.php?' . http_build_query( array_merge( $base_args, [ 'view' => 'projects', 'proj_status' => '' ] ) ) ) ); ?>">✕</a></span><?php endif; ?>
+            ?>
+            <span class="qpr-filter-badge">Durum: <?php echo esc_html( $fpl['lbl'] ); ?> <a href="<?php echo esc_url( $clear_pst_url ); ?>">✕</a></span>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -442,9 +451,8 @@ class QuotePress_Report {
                     $req_url = add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'requests', 'qp_project_id' => $mpid ], admin_url( 'admin.php' ) );
                     $loc     = trim( ( $mp->ilce ?? '' ) . ( ( $mp->ilce ?? '' ) && ( $mp->il ?? '' ) ? ' / ' : '' ) . ( $mp->il ?? '' ) );
 
-                    // Link ilce/il to filter
-                    $ilce_url = $mp->ilce ? add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'projects', 'ilce' => $mp->ilce ] , admin_url( 'admin.php' ) ) : '';
-                    $il_url   = $mp->il   ? add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'projects', 'il'   => $mp->il   ] , admin_url( 'admin.php' ) ) : '';
+                    $ilce_url = $mp->ilce ? add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'projects', 'ilce' => $mp->ilce ], admin_url( 'admin.php' ) ) : '';
+                    $il_url   = $mp->il   ? add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'projects', 'il'   => $mp->il   ], admin_url( 'admin.php' ) ) : '';
                 ?>
                 <tr>
                     <td>
