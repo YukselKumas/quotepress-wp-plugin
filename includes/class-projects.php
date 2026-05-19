@@ -18,7 +18,7 @@ class QuotePress_Projects {
             'quotepress-settings',
             __( 'Projeler', 'quotepress' ),
             '📁 ' . __( 'Projeler', 'quotepress' ),
-            'manage_options',
+            QuotePress_Users::CAP,
             'quotepress-projects',
             [ __CLASS__, 'render' ]
         );
@@ -34,7 +34,7 @@ class QuotePress_Projects {
 
     /* ── AJAX: save project ────────────────────────────────── */
     public static function handle_save() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_projects_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $id          = intval( $_POST['project_id'] ?? 0 );
@@ -87,7 +87,7 @@ class QuotePress_Projects {
 
     /* ── AJAX: delete project ──────────────────────────────── */
     public static function handle_delete() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_projects_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $id = intval( $_POST['project_id'] ?? 0 );
@@ -98,7 +98,7 @@ class QuotePress_Projects {
 
     /* ── AJAX: assign request to project ───────────────────── */
     public static function handle_assign() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_panel_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $request_id = intval( $_POST['request_id'] ?? 0 );
@@ -119,7 +119,7 @@ class QuotePress_Projects {
 
     /* ── AJAX: save project categories ────────────────────── */
     public static function handle_save_cats() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_projects_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $cats_raw = wp_unslash( $_POST['categories'] ?? '[]' );
@@ -132,7 +132,7 @@ class QuotePress_Projects {
 
     /* ── Render admin page ─────────────────────────────────── */
     public static function render() {
-        if ( ! current_user_can( 'manage_options' ) ) return;
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) return;
 
         $colors       = QuotePress_Settings::active_theme_colors();
         $nonce        = wp_create_nonce( 'qp_projects_nonce' );
