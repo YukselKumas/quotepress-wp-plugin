@@ -28,7 +28,7 @@ class QuotePress_Panel {
             wp_redirect( wp_login_url( home_url( '/' . QuotePress_Settings::get( 'panel_slug', 'quote-panel' ) . '/' ) ) );
             exit;
         }
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) {
             wp_die( esc_html__( 'Bu sayfaya erişim yetkiniz yok.', 'quotepress' ) );
         }
         self::render();
@@ -37,7 +37,7 @@ class QuotePress_Panel {
 
     /* ── AJAX: Send quote ──────────────────────────────────── */
     public static function handle_send_quote() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_panel_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
 
         $id       = intval( $_POST['request_id'] ?? 0 );
@@ -67,7 +67,7 @@ class QuotePress_Panel {
 
     /* ── AJAX: Delete request ──────────────────────────────── */
     public static function handle_delete() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_panel_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
         $id = intval( $_POST['request_id'] ?? 0 );
         global $wpdb;
@@ -77,7 +77,7 @@ class QuotePress_Panel {
 
     /* ── AJAX: Update status (won / lost / quoted) ─────────── */
     public static function handle_update_status() {
-        if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'permission_denied' ); }
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( QuotePress_Users::CAP ) ) { wp_send_json_error( 'permission_denied' ); }
         if ( ! check_ajax_referer( 'qp_panel_nonce', '_wpnonce', false ) ) { wp_send_json_error( 'invalid_nonce' ); }
         $id     = intval( $_POST['request_id'] ?? 0 );
         $status = sanitize_text_field( $_POST['new_status'] ?? '' );
