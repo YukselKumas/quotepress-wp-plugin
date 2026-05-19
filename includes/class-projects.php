@@ -66,6 +66,8 @@ class QuotePress_Projects {
             'description' => sanitize_textarea_field( wp_unslash( $_POST['description'] ?? '' ) ),
             'client_name' => sanitize_text_field( wp_unslash( $_POST['client_name'] ?? '' ) ),
             'address'     => sanitize_textarea_field( wp_unslash( $_POST['address']     ?? '' ) ),
+            'ilce'        => sanitize_text_field( wp_unslash( $_POST['ilce']        ?? '' ) ),
+            'il'          => sanitize_text_field( wp_unslash( $_POST['il']          ?? '' ) ),
             'tax_office'  => sanitize_text_field( wp_unslash( $_POST['tax_office']  ?? '' ) ),
             'tax_number'  => sanitize_text_field( wp_unslash( $_POST['tax_number']  ?? '' ) ),
             'contacts'    => wp_json_encode( $contacts, JSON_UNESCAPED_UNICODE ),
@@ -294,6 +296,9 @@ class QuotePress_Projects {
                 <?php if ( $p->client_name ) : ?>
                 <div class="qp-proj-meta"><?php echo esc_html( $p->client_name ); ?></div>
                 <?php endif; ?>
+                <?php if ( ( $p->ilce ?? '' ) || ( $p->il ?? '' ) ) : ?>
+                <div class="qp-proj-meta" style="color:#aaa;font-size:11px;">📍 <?php echo esc_html( trim( ( $p->ilce ?? '' ) . ( ( $p->ilce ?? '' ) && ( $p->il ?? '' ) ? ', ' : '' ) . ( $p->il ?? '' ) ) ); ?></div>
+                <?php endif; ?>
                 <div class="qp-proj-meta" style="font-weight:700;color:var(--qp-primary);"><?php echo (int) $pst['count']; ?> talep</div>
                 <span style="color:#ccc;font-size:18px;margin-left:4px;" id="qp-arrow-<?php echo $pid; ?>">▸</span>
             </div>
@@ -313,7 +318,11 @@ class QuotePress_Projects {
                     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--qp-primary);margin-bottom:8px;margin-top:4px;">🏢 Proje Bilgileri</div>
                     <div class="qp-proj-kv">
                         <?php if ( $p->client_name ) : ?><span class="k">Firma</span><span class="v"><?php echo esc_html( $p->client_name ); ?></span><?php endif; ?>
-                        <?php if ( $p->address ) : ?><span class="k">Adres</span><span class="v" style="white-space:pre-line;"><?php echo esc_html( $p->address ); ?></span><?php endif; ?>
+                        <?php if ( ( $p->ilce ?? '' ) || ( $p->il ?? '' ) ) : ?>
+                        <span class="k">İlçe / İl</span>
+                        <span class="v"><?php echo esc_html( trim( ( $p->ilce ?? '' ) . ( ( $p->ilce ?? '' ) && ( $p->il ?? '' ) ? ' / ' : '' ) . ( $p->il ?? '' ) ) ); ?></span>
+                        <?php endif; ?>
+                        <?php if ( $p->address ) : ?><span class="k">Açık Adres</span><span class="v" style="white-space:pre-line;"><?php echo esc_html( $p->address ); ?></span><?php endif; ?>
                         <?php if ( $p->tax_office ) : ?><span class="k">Vergi Dairesi</span><span class="v"><?php echo esc_html( $p->tax_office ); ?></span><?php endif; ?>
                         <?php if ( $p->tax_number ) : ?><span class="k">Vergi No</span><span class="v"><?php echo esc_html( $p->tax_number ); ?></span><?php endif; ?>
                         <?php if ( $p->deadline ) : ?><span class="k">Termin</span><span class="v"><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $p->deadline ) ) ); ?></span><?php endif; ?>
@@ -417,9 +426,17 @@ class QuotePress_Projects {
                             <input type="text" id="qpFormClient" placeholder="Müşteri firma adı">
                         </div>
                         <div class="qp-form-row"></div>
+                        <div class="qp-form-row">
+                            <label>İlçe</label>
+                            <input type="text" id="qpFormIlce" placeholder="örn. Kadıköy">
+                        </div>
+                        <div class="qp-form-row">
+                            <label>İl</label>
+                            <input type="text" id="qpFormIl" placeholder="örn. İstanbul">
+                        </div>
                         <div class="qp-form-row qp-form-full">
-                            <label>Adres</label>
-                            <textarea id="qpFormAddress" placeholder="Sokak, mahalle, ilçe, şehir..." rows="2"></textarea>
+                            <label>Açık Adres <span style="font-weight:400;color:#aaa;">(sokak, mahalle...)</span></label>
+                            <textarea id="qpFormAddress" placeholder="Sokak, bina, mahalle..." rows="2"></textarea>
                         </div>
                         <div class="qp-form-row">
                             <label>Vergi Dairesi</label>
@@ -463,6 +480,8 @@ class QuotePress_Projects {
                 'category'    => $p->category ?? '',
                 'description' => $p->description,
                 'client_name' => $p->client_name,
+                'ilce'        => $p->ilce ?? '',
+                'il'          => $p->il ?? '',
                 'address'     => $p->address ?? '',
                 'tax_office'  => $p->tax_office ?? '',
                 'tax_number'  => $p->tax_number ?? '',
@@ -530,33 +549,37 @@ class QuotePress_Projects {
             document.getElementById('qpContactRows').innerHTML = '';
             if (id === 0) {
                 document.getElementById('qpModalTitle').textContent = 'Yeni Proje';
-                document.getElementById('qpFormId').value       = '0';
-                document.getElementById('qpFormName').value     = '';
-                document.getElementById('qpFormCategory').value = '';
-                document.getElementById('qpFormClient').value   = '';
-                document.getElementById('qpFormAddress').value  = '';
+                document.getElementById('qpFormId').value        = '0';
+                document.getElementById('qpFormName').value      = '';
+                document.getElementById('qpFormCategory').value  = '';
+                document.getElementById('qpFormClient').value    = '';
+                document.getElementById('qpFormIlce').value      = '';
+                document.getElementById('qpFormIl').value        = '';
+                document.getElementById('qpFormAddress').value   = '';
                 document.getElementById('qpFormTaxOffice').value = '';
                 document.getElementById('qpFormTaxNumber').value = '';
-                document.getElementById('qpFormDesc').value     = '';
-                document.getElementById('qpFormStatus').value   = 'active';
-                document.getElementById('qpFormDeadline').value = '';
-                document.getElementById('qpFormBudget').value   = '';
+                document.getElementById('qpFormDesc').value      = '';
+                document.getElementById('qpFormStatus').value    = 'active';
+                document.getElementById('qpFormDeadline').value  = '';
+                document.getElementById('qpFormBudget').value    = '';
                 qpSyncContactVisibility();
             } else {
                 var p = qpProjData.find(function(x){ return x.id === id; });
                 if (!p) return;
                 document.getElementById('qpModalTitle').textContent = 'Projeyi Düzenle';
-                document.getElementById('qpFormId').value       = p.id;
-                document.getElementById('qpFormName').value     = p.name;
-                document.getElementById('qpFormCategory').value = p.category || '';
-                document.getElementById('qpFormClient').value   = p.client_name;
-                document.getElementById('qpFormAddress').value  = p.address || '';
+                document.getElementById('qpFormId').value        = p.id;
+                document.getElementById('qpFormName').value      = p.name;
+                document.getElementById('qpFormCategory').value  = p.category || '';
+                document.getElementById('qpFormClient').value    = p.client_name;
+                document.getElementById('qpFormIlce').value      = p.ilce || '';
+                document.getElementById('qpFormIl').value        = p.il || '';
+                document.getElementById('qpFormAddress').value   = p.address || '';
                 document.getElementById('qpFormTaxOffice').value = p.tax_office || '';
                 document.getElementById('qpFormTaxNumber').value = p.tax_number || '';
-                document.getElementById('qpFormDesc').value     = p.description;
-                document.getElementById('qpFormStatus').value   = p.status;
-                document.getElementById('qpFormDeadline').value = p.deadline || '';
-                document.getElementById('qpFormBudget').value   = p.budget || '';
+                document.getElementById('qpFormDesc').value      = p.description;
+                document.getElementById('qpFormStatus').value    = p.status;
+                document.getElementById('qpFormDeadline').value  = p.deadline || '';
+                document.getElementById('qpFormBudget').value    = p.budget || '';
                 (p.contacts || []).forEach(function(c) { qpAddContactRow(c); });
                 qpSyncContactVisibility();
             }
@@ -633,6 +656,8 @@ class QuotePress_Projects {
             fd.append('name',        name);
             fd.append('category',    document.getElementById('qpFormCategory').value);
             fd.append('client_name', document.getElementById('qpFormClient').value);
+            fd.append('ilce',        document.getElementById('qpFormIlce').value);
+            fd.append('il',          document.getElementById('qpFormIl').value);
             fd.append('address',     document.getElementById('qpFormAddress').value);
             fd.append('tax_office',  document.getElementById('qpFormTaxOffice').value);
             fd.append('tax_number',  document.getElementById('qpFormTaxNumber').value);

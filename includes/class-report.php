@@ -80,14 +80,17 @@ class QuotePress_Report {
     public static function render() {
         if ( ! current_user_can( 'manage_options' ) ) return;
 
-        $status_filter     = sanitize_text_field( isset( $_GET['status'] )         ? $_GET['status']         : '' );
-        $search            = sanitize_text_field( isset( $_GET['search'] )         ? $_GET['search']         : '' );
-        $date_from         = sanitize_text_field( isset( $_GET['date_from'] )      ? $_GET['date_from']      : '' );
-        $date_to           = sanitize_text_field( isset( $_GET['date_to'] )        ? $_GET['date_to']        : '' );
-        $project_filter    = sanitize_text_field( isset( $_GET['project'] )        ? $_GET['project']        : '' );
+        $status_filter     = sanitize_text_field( $_GET['status']         ?? '' );
+        $search            = sanitize_text_field( $_GET['search']         ?? '' );
+        $date_from         = sanitize_text_field( $_GET['date_from']      ?? '' );
+        $date_to           = sanitize_text_field( $_GET['date_to']        ?? '' );
+        $project_filter    = sanitize_text_field( $_GET['project']        ?? '' );
         $proj_id_filter    = isset( $_GET['qp_project_id'] ) ? (int) $_GET['qp_project_id'] : 0;
-        $view              = sanitize_text_field( isset( $_GET['view'] )           ? $_GET['view']           : 'requests' );
-        $def_currency   = QuotePress_Settings::get( 'default_currency', 'USD' );
+        $view              = sanitize_text_field( $_GET['view']           ?? 'requests' );
+        $filter_il         = sanitize_text_field( $_GET['il']             ?? '' );
+        $filter_ilce       = sanitize_text_field( $_GET['ilce']           ?? '' );
+        $filter_proj_status = sanitize_text_field( $_GET['proj_status']   ?? '' );
+        $def_currency      = QuotePress_Settings::get( 'default_currency', 'USD' );
 
         $per_page_opts = array( 20, 50, 100 );
         $per_page_raw  = isset( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
@@ -155,13 +158,16 @@ class QuotePress_Report {
         $slug    = QuotePress_Settings::get( 'panel_slug', 'quote-panel' );
 
         $base_args = array_filter( array(
-            'page'      => 'quotepress-reports',
-            'status'    => $status_filter,
-            'search'    => $search,
-            'date_from' => $date_from,
-            'date_to'   => $date_to,
-            'project'   => $project_filter,
-            'per_page'  => $per_page !== 20 ? $per_page : '',
+            'page'        => 'quotepress-reports',
+            'status'      => $status_filter,
+            'search'      => $search,
+            'date_from'   => $date_from,
+            'date_to'     => $date_to,
+            'project'     => $project_filter,
+            'il'          => $filter_il,
+            'ilce'        => $filter_ilce,
+            'proj_status' => $filter_proj_status,
+            'per_page'    => $per_page !== 20 ? $per_page : '',
         ) );
 
         $csv_url = add_query_arg( array_merge( $base_args, array(
@@ -270,26 +276,58 @@ class QuotePress_Report {
 
         <?php if ( $view === 'projects' ) : ?>
 
-        <!-- PROJELER GÖRÜNÜMÜ — master proje tablosu -->
+        <!-- PROJELER GÖRÜNÜMÜ -->
         <?php
-        $master_projects = QuotePress_Database::get_projects();
-
-        // Build stats per project_id from all requests
         global $wpdb;
+        $pt          = QuotePress_Database::projects_table();
         $req_table   = QuotePress_Database::table();
-        $proj_rows   = $wpdb->get_results(
+
+        // Collect distinct il/ilce values for filter dropdowns
+        $all_il   = $wpdb->get_col( "SELECT DISTINCT il   FROM {$pt} WHERE il   != '' ORDER BY il   ASC" );
+        $all_ilce = $wpdb->get_col( "SELECT DISTINCT ilce FROM {$pt} WHERE ilce != '' ORDER BY ilce ASC" );
+
+        // Build master projects query with optional location + status filter
+        $proj_where  = [];
+        $proj_values = [];
+        if ( $filter_il ) {
+            $proj_where[]  = 'il = %s';
+            $proj_values[] = $filter_il;
+        }
+        if ( $filter_ilce ) {
+            $proj_where[]  = 'ilce = %s';
+            $proj_values[] = $filter_ilce;
+        }
+        if ( $filter_proj_status ) {
+            $proj_where[]  = 'status = %s';
+            $proj_values[] = $filter_proj_status;
+        }
+        $proj_sql = "SELECT * FROM {$pt}";
+        if ( $proj_where ) {
+            $proj_sql .= ' WHERE ' . implode( ' AND ', $proj_where );
+        }
+        $proj_sql .= ' ORDER BY created_at DESC';
+        $master_projects = $proj_values
+            ? $wpdb->get_results( $wpdb->prepare( $proj_sql, $proj_values ) )
+            : $wpdb->get_results( $proj_sql );
+
+        // Build stats per project_id: count, status breakdown, value, last request date, last request status
+        $proj_rows = $wpdb->get_results(
             "SELECT project_id, status, quote_data, created_at FROM {$req_table} WHERE project_id IS NOT NULL"
         );
-        $pstats = array();
+        $pstats = [];
         foreach ( $proj_rows as $pr ) {
             $pid = (int) $pr->project_id;
             if ( ! isset( $pstats[ $pid ] ) ) {
-                $pstats[ $pid ] = array( 'count' => 0, 'pending' => 0, 'quoted' => 0, 'won' => 0, 'lost' => 0, 'value' => 0.0, 'currency' => $def_currency, 'last_date' => '' );
+                $pstats[ $pid ] = [
+                    'count'       => 0, 'pending' => 0, 'quoted' => 0, 'won' => 0, 'lost' => 0,
+                    'value'       => 0.0, 'currency' => $def_currency,
+                    'last_date'   => '', 'last_status' => '',
+                ];
             }
             $pstats[ $pid ]['count']++;
             if ( isset( $pstats[ $pid ][ $pr->status ] ) ) $pstats[ $pid ][ $pr->status ]++;
             if ( $pr->quote_data ) {
-                $qd    = json_decode( $pr->quote_data, true ) ?: array();
+                $qd    = json_decode( $pr->quote_data, true ) ?: [];
                 $grand = floatval( $qd['grand_total'] ?? 0 );
                 if ( $grand > 0 ) {
                     $pstats[ $pid ]['value']   += $grand;
@@ -297,35 +335,85 @@ class QuotePress_Report {
                 }
             }
             if ( $pr->created_at > $pstats[ $pid ]['last_date'] ) {
-                $pstats[ $pid ]['last_date'] = $pr->created_at;
+                $pstats[ $pid ]['last_date']   = $pr->created_at;
+                $pstats[ $pid ]['last_status'] = $pr->status;
             }
         }
 
-        // Count unassigned requests
         $unassigned_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$req_table} WHERE project_id IS NULL" );
 
-        $proj_status_labels = array(
-            'active'    => array( 'lbl' => 'Aktif',       'cls' => 'won' ),
-            'completed' => array( 'lbl' => 'Tamamlandı',  'cls' => 'quoted' ),
-            'cancelled' => array( 'lbl' => 'İptal',       'cls' => 'lost' ),
-        );
+        $proj_status_labels = [
+            'active'    => [ 'lbl' => 'Aktif',      'cls' => 'won' ],
+            'completed' => [ 'lbl' => 'Tamamlandı', 'cls' => 'quoted' ],
+            'cancelled' => [ 'lbl' => 'İptal',      'cls' => 'lost' ],
+        ];
+        $req_status_labels = [
+            'pending' => [ 'lbl' => 'Beklemede',      'cls' => 'pending' ],
+            'quoted'  => [ 'lbl' => 'Tekliflendirildi','cls' => 'quoted' ],
+            'won'     => [ 'lbl' => '✓ Kabul',        'cls' => 'won' ],
+            'lost'    => [ 'lbl' => '✗ Reddedildi',   'cls' => 'lost' ],
+        ];
         ?>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div></div>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-projects' ) ); ?>" class="qpr-btn" style="font-size:12px;padding:7px 16px;">+ Proje Yönet</a>
+
+        <!-- Proje filtreleri -->
+        <form method="get" class="qpr-filters">
+            <input type="hidden" name="page"  value="quotepress-reports">
+            <input type="hidden" name="view"  value="projects">
+            <div>
+                <label>İl</label>
+                <select name="il">
+                    <option value="">Tümü</option>
+                    <?php foreach ( $all_il as $il_val ) : ?>
+                    <option value="<?php echo esc_attr( $il_val ); ?>" <?php selected( $filter_il, $il_val ); ?>><?php echo esc_html( $il_val ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label>İlçe</label>
+                <select name="ilce">
+                    <option value="">Tümü</option>
+                    <?php foreach ( $all_ilce as $ilce_val ) : ?>
+                    <option value="<?php echo esc_attr( $ilce_val ); ?>" <?php selected( $filter_ilce, $ilce_val ); ?>><?php echo esc_html( $ilce_val ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label>Proje Durumu</label>
+                <select name="proj_status">
+                    <option value="">Tümü</option>
+                    <option value="active"    <?php selected( $filter_proj_status, 'active' ); ?>>Aktif</option>
+                    <option value="completed" <?php selected( $filter_proj_status, 'completed' ); ?>>Tamamlandı</option>
+                    <option value="cancelled" <?php selected( $filter_proj_status, 'cancelled' ); ?>>İptal Edildi</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button type="submit" class="qpr-btn">Filtrele</button>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-reports&view=projects' ) ); ?>" class="qpr-btn sec">Temizle</a>
+            </div>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-projects' ) ); ?>" class="qpr-btn" style="margin-left:auto;font-size:12px;padding:7px 16px;">+ Proje Yönet</a>
+        </form>
+
+        <?php
+        // Active filter badges
+        if ( $filter_il || $filter_ilce || $filter_proj_status ) : ?>
+        <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <?php if ( $filter_il ) : ?><span class="qpr-filter-badge">📍 İl: <?php echo esc_html( $filter_il ); ?> <a href="<?php echo esc_url( add_query_arg( [ 'il' => '' ], admin_url( 'admin.php?' . http_build_query( array_merge( $base_args, [ 'view' => 'projects', 'il' => '' ] ) ) ) ); ?>">✕</a></span><?php endif; ?>
+            <?php if ( $filter_ilce ) : ?><span class="qpr-filter-badge">📍 İlçe: <?php echo esc_html( $filter_ilce ); ?> <a href="<?php echo esc_url( add_query_arg( [ 'ilce' => '' ], admin_url( 'admin.php?' . http_build_query( array_merge( $base_args, [ 'view' => 'projects', 'ilce' => '' ] ) ) ) ); ?>">✕</a></span><?php endif; ?>
+            <?php if ( $filter_proj_status ) :
+                $fpl = $proj_status_labels[ $filter_proj_status ] ?? [ 'lbl' => $filter_proj_status ];
+            ?><span class="qpr-filter-badge">Durum: <?php echo esc_html( $fpl['lbl'] ); ?> <a href="<?php echo esc_url( add_query_arg( [ 'proj_status' => '' ], admin_url( 'admin.php?' . http_build_query( array_merge( $base_args, [ 'view' => 'projects', 'proj_status' => '' ] ) ) ) ); ?>">✕</a></span><?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <div class="qpr-card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                <div class="qpr-card-title" style="margin:0;border:0;padding:0;">
-                    Üst Projeler
-                    <span style="font-weight:400;color:#aaa;font-size:12px;margin-left:4px;">(<?php echo count( $master_projects ); ?> proje)</span>
-                </div>
+            <div class="qpr-card-title">
+                Projeler
+                <span style="font-weight:400;color:#aaa;font-size:12px;margin-left:4px;">(<?php echo count( $master_projects ); ?>)</span>
             </div>
 
             <?php if ( empty( $master_projects ) ) : ?>
                 <div class="qpr-empty">
-                    Henüz proje tanımlanmamış.
+                    Proje bulunamadı.
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=quotepress-projects' ) ); ?>" style="color:var(--qp-primary);">Proje ekle →</a>
                 </div>
             <?php else : ?>
@@ -333,56 +421,70 @@ class QuotePress_Report {
             <table class="qpr-table">
                 <thead><tr>
                     <th>Proje Adı</th>
-                    <th>Müşteri</th>
-                    <th>Durum</th>
+                    <th>Firma</th>
+                    <th>İlçe / İl</th>
+                    <th>Proje Durumu</th>
                     <th style="text-align:center;">Talep</th>
                     <th style="text-align:center;">Beklemede</th>
-                    <th style="text-align:center;">Tekliflendirildi</th>
-                    <th style="text-align:center;">Kabul</th>
-                    <th style="text-align:center;">Reddedildi</th>
-                    <th style="text-align:right;">Teklif Tutarı</th>
+                    <th style="text-align:center;">Tekliflendi</th>
+                    <th style="text-align:center;">✓ Kabul</th>
+                    <th style="text-align:center;">✗ Red</th>
+                    <th style="text-align:right;">Toplam Tutar</th>
                     <th>Son Talep</th>
+                    <th>Son Teklif Durumu</th>
                 </tr></thead>
                 <tbody>
                 <?php foreach ( $master_projects as $mp ) :
-                    $mpid = (int) $mp->id;
-                    $mst  = $pstats[ $mpid ] ?? array( 'count' => 0, 'pending' => 0, 'quoted' => 0, 'won' => 0, 'lost' => 0, 'value' => 0.0, 'currency' => $def_currency, 'last_date' => '' );
-                    $slbl = $proj_status_labels[ $mp->status ] ?? $proj_status_labels['active'];
-                    $req_url = add_query_arg( array( 'page' => 'quotepress-reports', 'view' => 'requests', 'qp_project_id' => $mpid ), admin_url( 'admin.php' ) );
+                    $mpid    = (int) $mp->id;
+                    $mst     = $pstats[ $mpid ] ?? [ 'count' => 0, 'pending' => 0, 'quoted' => 0, 'won' => 0, 'lost' => 0, 'value' => 0.0, 'currency' => $def_currency, 'last_date' => '', 'last_status' => '' ];
+                    $slbl    = $proj_status_labels[ $mp->status ] ?? $proj_status_labels['active'];
+                    $last_st = $mst['last_status'] ? ( $req_status_labels[ $mst['last_status'] ] ?? null ) : null;
+                    $req_url = add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'requests', 'qp_project_id' => $mpid ], admin_url( 'admin.php' ) );
+                    $loc     = trim( ( $mp->ilce ?? '' ) . ( ( $mp->ilce ?? '' ) && ( $mp->il ?? '' ) ? ' / ' : '' ) . ( $mp->il ?? '' ) );
+
+                    // Link ilce/il to filter
+                    $ilce_url = $mp->ilce ? add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'projects', 'ilce' => $mp->ilce ] , admin_url( 'admin.php' ) ) : '';
+                    $il_url   = $mp->il   ? add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'projects', 'il'   => $mp->il   ] , admin_url( 'admin.php' ) ) : '';
                 ?>
                 <tr>
                     <td>
-                        <a href="<?php echo esc_url( $req_url ); ?>" class="proj-link">
-                            <?php echo esc_html( $mp->name ); ?>
-                        </a>
+                        <a href="<?php echo esc_url( $req_url ); ?>" class="proj-link"><?php echo esc_html( $mp->name ); ?></a>
+                        <?php if ( $mp->category ) : ?>
+                        <br><span style="font-size:11px;background:#f0f0f0;padding:1px 5px;border-radius:3px;color:#666;"><?php echo esc_html( $mp->category ); ?></span>
+                        <?php endif; ?>
                         <?php if ( $mp->deadline ) : ?>
                         <br><span style="font-size:11px;color:#aaa;">📅 <?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $mp->deadline ) ) ); ?></span>
                         <?php endif; ?>
                     </td>
                     <td style="color:#666;font-size:12px;"><?php echo esc_html( $mp->client_name ?: '—' ); ?></td>
+                    <td style="font-size:12px;white-space:nowrap;">
+                        <?php if ( $mp->ilce ) : ?>
+                        <a href="<?php echo esc_url( $ilce_url ); ?>" style="color:var(--qp-primary);text-decoration:none;font-weight:600;"><?php echo esc_html( $mp->ilce ); ?></a>
+                        <?php endif; ?>
+                        <?php if ( $mp->ilce && $mp->il ) echo ' / '; ?>
+                        <?php if ( $mp->il ) : ?>
+                        <a href="<?php echo esc_url( $il_url ); ?>" style="color:#555;text-decoration:none;"><?php echo esc_html( $mp->il ); ?></a>
+                        <?php endif; ?>
+                        <?php if ( ! $loc ) echo '<span style="color:#ccc;">—</span>'; ?>
+                    </td>
                     <td><span class="qpr-mini <?php echo esc_attr( $slbl['cls'] ); ?>"><?php echo esc_html( $slbl['lbl'] ); ?></span></td>
                     <td style="text-align:center;font-weight:700;"><?php echo (int) $mst['count']; ?></td>
-                    <td style="text-align:center;">
-                        <?php echo $mst['pending'] > 0 ? '<span class="qpr-mini pending">' . (int) $mst['pending'] . '</span>' : '—'; ?>
-                    </td>
-                    <td style="text-align:center;">
-                        <?php echo $mst['quoted'] > 0 ? '<span class="qpr-mini quoted">' . (int) $mst['quoted'] . '</span>' : '—'; ?>
-                    </td>
-                    <td style="text-align:center;">
-                        <?php echo $mst['won'] > 0 ? '<span class="qpr-mini won">' . (int) $mst['won'] . '</span>' : '—'; ?>
-                    </td>
-                    <td style="text-align:center;">
-                        <?php echo $mst['lost'] > 0 ? '<span class="qpr-mini lost">' . (int) $mst['lost'] . '</span>' : '—'; ?>
-                    </td>
+                    <td style="text-align:center;"><?php echo $mst['pending'] > 0 ? '<span class="qpr-mini pending">' . (int) $mst['pending'] . '</span>' : '—'; ?></td>
+                    <td style="text-align:center;"><?php echo $mst['quoted']  > 0 ? '<span class="qpr-mini quoted">'  . (int) $mst['quoted']  . '</span>' : '—'; ?></td>
+                    <td style="text-align:center;"><?php echo $mst['won']     > 0 ? '<span class="qpr-mini won">'     . (int) $mst['won']     . '</span>' : '—'; ?></td>
+                    <td style="text-align:center;"><?php echo $mst['lost']    > 0 ? '<span class="qpr-mini lost">'    . (int) $mst['lost']    . '</span>' : '—'; ?></td>
                     <td style="text-align:right;font-weight:600;color:var(--qp-primary);">
-                        <?php echo $mst['value'] > 0
-                            ? esc_html( number_format( $mst['value'], 2, '.', ',' ) . ' ' . $mst['currency'] )
-                            : '—'; ?>
+                        <?php echo $mst['value'] > 0 ? esc_html( number_format( $mst['value'], 2, '.', ',' ) . ' ' . $mst['currency'] ) : '—'; ?>
                     </td>
                     <td style="color:#aaa;white-space:nowrap;font-size:12px;">
-                        <?php echo $mst['last_date']
-                            ? esc_html( date_i18n( get_option( 'date_format' ), strtotime( $mst['last_date'] ) ) )
-                            : '—'; ?>
+                        <?php echo $mst['last_date'] ? esc_html( date_i18n( get_option( 'date_format' ), strtotime( $mst['last_date'] ) ) ) : '—'; ?>
+                    </td>
+                    <td>
+                        <?php if ( $last_st ) : ?>
+                        <span class="qpr-mini <?php echo esc_attr( $last_st['cls'] ); ?>"><?php echo esc_html( $last_st['lbl'] ); ?></span>
+                        <?php else : ?>
+                        <span style="color:#ccc;font-size:12px;">—</span>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -393,7 +495,7 @@ class QuotePress_Report {
             <?php if ( $unassigned_count > 0 ) : ?>
             <div style="margin-top:14px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:13px;color:#78350f;">
                 ⚠ <strong><?php echo (int) $unassigned_count; ?></strong> talep henüz bir projeye bağlanmamış.
-                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'quotepress-reports', 'view' => 'requests' ), admin_url( 'admin.php' ) ) ); ?>" style="color:var(--qp-primary);margin-left:6px;">Talepleri Gör →</a>
+                <a href="<?php echo esc_url( add_query_arg( [ 'page' => 'quotepress-reports', 'view' => 'requests' ], admin_url( 'admin.php' ) ) ); ?>" style="color:var(--qp-primary);margin-left:6px;">Talepleri Gör →</a>
             </div>
             <?php endif; ?>
 
@@ -592,35 +694,42 @@ class QuotePress_Report {
 
         $out = fopen( 'php://output', 'w' );
         fputcsv( $out, array(
-            'ID', 'Proje Adı', 'Firma', 'İletişim Kişisi', 'E-posta', 'Telefon',
-            'Şehir', 'Ülke', 'Ürünler', 'Durum', 'Teklif Tutarı', 'Para Birimi', 'Tarih',
+            'ID', 'Proje Adı', 'Firma', 'İlçe (Proje)', 'İl (Proje)', 'İletişim Kişisi', 'E-posta', 'Telefon',
+            'Ürünler', 'Talep Durumu', 'Teklif Tutarı', 'Para Birimi', 'Tarih',
         ) );
 
+        // Build project location lookup
+        global $wpdb;
+        $pt           = QuotePress_Database::projects_table();
+        $proj_locs    = $wpdb->get_results( "SELECT id, ilce, il FROM {$pt}", OBJECT_K );
+        $status_map   = [ 'pending' => 'Beklemede', 'quoted' => 'Tekliflendirildi', 'won' => 'Kabul Edildi', 'lost' => 'Reddedildi' ];
+
         foreach ( $requests as $r ) {
-            $r_items   = json_decode( $r->items, true ) ?: array();
-            $qd        = $r->quote_data ? ( json_decode( $r->quote_data, true ) ?: array() ) : array();
-            $grand     = floatval( isset( $qd['grand_total'] ) ? $qd['grand_total'] : 0 );
-            $currency  = isset( $qd['currency'] ) ? $qd['currency'] : $def_currency;
+            $r_items   = json_decode( $r->items, true ) ?: [];
+            $qd        = $r->quote_data ? ( json_decode( $r->quote_data, true ) ?: [] ) : [];
+            $grand     = floatval( $qd['grand_total'] ?? 0 );
+            $currency  = $qd['currency'] ?? $def_currency;
             $item_list = implode( '; ', array_map(
-                function( $i ) { return ( isset( $i['name'] ) ? $i['name'] : '' ) . ' x' . ( isset( $i['qty'] ) ? $i['qty'] : 1 ); },
+                fn( $i ) => ( $i['name'] ?? '' ) . ' x' . ( $i['qty'] ?? 1 ),
                 $r_items
             ) );
+            $proj_loc  = $r->project_id && isset( $proj_locs[ $r->project_id ] ) ? $proj_locs[ $r->project_id ] : null;
 
-            fputcsv( $out, array(
+            fputcsv( $out, [
                 $r->id,
                 $r->project_name,
                 $r->company_name,
+                $proj_loc ? $proj_loc->ilce : '',
+                $proj_loc ? $proj_loc->il   : '',
                 $r->contact_name,
                 $r->email,
                 $r->phone,
-                $r->city,
-                $r->country,
                 $item_list,
-                $r->status,
+                $status_map[ $r->status ] ?? $r->status,
                 $grand > 0 ? number_format( $grand, 2, '.', ',' ) : '',
                 $grand > 0 ? $currency : '',
                 date_i18n( 'Y-m-d H:i', strtotime( $r->created_at ) ),
-            ) );
+            ] );
         }
 
         fclose( $out );
