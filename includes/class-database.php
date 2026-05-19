@@ -53,6 +53,8 @@ class QuotePress_Database {
             description TEXT            NOT NULL DEFAULT '',
             client_name VARCHAR(255)    NOT NULL DEFAULT '',
             address     TEXT            NOT NULL DEFAULT '',
+            ilce        VARCHAR(100)    NOT NULL DEFAULT '',
+            il          VARCHAR(100)    NOT NULL DEFAULT '',
             tax_office  VARCHAR(100)    NOT NULL DEFAULT '',
             tax_number  VARCHAR(50)     NOT NULL DEFAULT '',
             contacts    LONGTEXT        NOT NULL DEFAULT '',
@@ -179,6 +181,8 @@ class QuotePress_Database {
             description TEXT            NOT NULL DEFAULT '',
             client_name VARCHAR(255)    NOT NULL DEFAULT '',
             address     TEXT            NOT NULL DEFAULT '',
+            ilce        VARCHAR(100)    NOT NULL DEFAULT '',
+            il          VARCHAR(100)    NOT NULL DEFAULT '',
             tax_office  VARCHAR(100)    NOT NULL DEFAULT '',
             tax_number  VARCHAR(50)     NOT NULL DEFAULT '',
             contacts    LONGTEXT        NOT NULL DEFAULT '',
@@ -226,7 +230,9 @@ class QuotePress_Database {
         foreach ( [
             'category'   => "ADD COLUMN category   VARCHAR(100) NOT NULL DEFAULT '' AFTER name",
             'address'    => "ADD COLUMN address    TEXT         NOT NULL DEFAULT '' AFTER client_name",
-            'tax_office' => "ADD COLUMN tax_office VARCHAR(100) NOT NULL DEFAULT '' AFTER address",
+            'ilce'       => "ADD COLUMN ilce       VARCHAR(100) NOT NULL DEFAULT '' AFTER address",
+            'il'         => "ADD COLUMN il         VARCHAR(100) NOT NULL DEFAULT '' AFTER ilce",
+            'tax_office' => "ADD COLUMN tax_office VARCHAR(100) NOT NULL DEFAULT '' AFTER il",
             'tax_number' => "ADD COLUMN tax_number VARCHAR(50)  NOT NULL DEFAULT '' AFTER tax_office",
             'contacts'   => "ADD COLUMN contacts   LONGTEXT     NOT NULL DEFAULT '' AFTER tax_number",
         ] as $col => $ddl ) {
