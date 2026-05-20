@@ -35,6 +35,7 @@ foreach ( [
     'class-products',
     'class-users',
     'class-backup',
+    'class-template-builder',
 ] as $file ) {
     require_once QP_PATH . 'includes/' . $file . '.php';
 }
@@ -54,6 +55,7 @@ add_action( 'plugins_loaded', function () {
     QuotePress_Products::init();
     QuotePress_Users::init();
     QuotePress_Backup::init();
+    QuotePress_Template_Builder::init();
 } );
 
 /* ── Activation / Deactivation ──────────────────────────────── */
