@@ -311,6 +311,36 @@ class QuotePress_PDF {
 
         $kdv_notu = $vat_rate > 0 ? 'KDV dahildir.' : 'KDV dahil değildir.';
 
+        // Template-driven text
+        $stat1_num    = QuotePress_Settings::get_tpl('ig_stat1_num',   '3 iş günü');
+        $stat1_label  = QuotePress_Settings::get_tpl('ig_stat1_label', 'rapor teslim süresi');
+        $stat2_num    = QuotePress_Settings::get_tpl('ig_stat2_num',   '48 saat');
+        $stat2_label  = QuotePress_Settings::get_tpl('ig_stat2_label', 'teknik servis garantisi');
+        $stat3_num    = QuotePress_Settings::get_tpl('ig_stat3_num',   '20+ yıl');
+        $stat3_label  = QuotePress_Settings::get_tpl('ig_stat3_label', 'sektör deneyimi');
+        $annual_title = QuotePress_Settings::get_tpl('ig_annual_title', 'Yılda En Az 1 Kez — Yüz Yüze Hizmet Değerlendirmesi');
+        $annual_body  = QuotePress_Settings::get_tpl('ig_annual_body',  'Yılda en az bir kez site yönetimiyle yüz yüze veya çevrimiçi toplantı düzenliyoruz. Hizmet kalitesi gözden geçirilir, varsa şikayetler ve iyileştirme önerileri birlikte ele alınır.');
+        $cta_title    = QuotePress_Settings::get_tpl('ig_cta_title',    'Sonraki Adım — Birlikte Başlayalım');
+        $cta_body_tpl = QuotePress_Settings::get_tpl('ig_cta_body',     '');
+        $dipnot       = QuotePress_Settings::get_tpl('ig_guarantee_note', 'Sözleşmeye dönüşen teklifler iptal edilemez.');
+        $intro_text   = QuotePress_Settings::get_tpl('ig_intro_text',   '');
+        $answer_text  = QuotePress_Settings::get_tpl('ig_answer_text',  '');
+        $gv = [];
+        $gv_defs = [
+            ['Bakanlık Onaylı','Yetkili Ölçüm Şirketi'],
+            ['ISO 9001','Sertifikalı Hizmet Süreçleri'],
+            ['Teklif Geçerlilik', '' ],
+            ['20+ Yıllık','Sektör Deneyimi'],
+        ];
+        for ( $gi = 1; $gi <= 4; $gi++ ) {
+            $gv[] = [
+                QuotePress_Settings::get_tpl( "ig_gv{$gi}_title", $gv_defs[$gi-1][0] ),
+                QuotePress_Settings::get_tpl( "ig_gv{$gi}_sub",   $gv_defs[$gi-1][1] ),
+            ];
+        }
+        // Slot 3 alt always shows validity days
+        $gv[2][1] = $validity . ' Gün';
+
         // Commitment cards
         $card_nums   = ['3','PDF','48','7/24','100%','ISO'];
         $card_units  = ['İŞ GÜNÜ','EXCEL · ÇIKTI','SAAT','ERİŞİM','UYUM','9001'];
@@ -373,7 +403,10 @@ class QuotePress_PDF {
             'primary', 'light', 'border', 'logo_url', 'c_line',
             'unit_qty', 'unit_price', 'client', 'contact', 'contact_ttl',
             'city', 'salutation', 'rows', 'vat_row', 'note_block', 'kdv_notu',
-            'tpl_cards', 'comparison', 'tpl_qs', 'badges_html', 'request'
+            'tpl_cards', 'comparison', 'tpl_qs', 'badges_html', 'request',
+            'stat1_num', 'stat1_label', 'stat2_num', 'stat2_label', 'stat3_num', 'stat3_label',
+            'annual_title', 'annual_body', 'cta_title', 'cta_body_tpl', 'dipnot',
+            'intro_text', 'answer_text', 'gv'
         );
     }
 
@@ -496,12 +529,15 @@ a{text-decoration:none;}
     }
 
     private static function ig_intro_letter( $ctx ) {
-        extract( $ctx ); ?>
+        extract( $ctx );
+        $intro_para = $intro_text
+            ? str_replace( ['[MÜŞTERİ]','[ŞİRKET]'], [ $client, esc_html($co) ], esc_html($intro_text) )
+            : $client . '&#39;nin ısı gider paylaşım süreçleri için ' . esc_html($co) . '&#39;ye gösterdiğiniz ilgiye teşekkür ederiz. Bu teklif, sitenizin ihtiyaçlarına özel olarak hazırlanmış olup aşağıdaki soruların yanıtlarını içermektedir:';
+        $answer_para = $answer_text ?: '<strong>Bu soruların tamamına net bir yanıt veriyoruz:</strong> ' . esc_html($co) . ' olarak tüm süreci sizin adınıza yönetiyor, sadece sonuçları size teslim ediyoruz.';
+        ?>
 <div class="section">
   <p style="font-size:13px;font-weight:700;margin:0 0 10px;"><?php echo $salutation; ?></p>
-  <p style="font-size:12.5px;color:#444;line-height:1.8;margin:0 0 14px;">
-    <?php echo $client; ?>'nin ısı gider paylaşım süreçleri için <?php echo esc_html($co); ?>'ye gösterdiğiniz ilgiye teşekkür ederiz. Bu teklif, sitenizin ihtiyaçlarına özel olarak hazırlanmış olup aşağıdaki soruların yanıtlarını içermektedir:
-  </p>
+  <p style="font-size:12.5px;color:#444;line-height:1.8;margin:0 0 14px;"><?php echo $intro_para; ?></p>
   <table style="border:1px solid <?php echo $border; ?>;border-radius:6px;overflow:hidden;margin-bottom:14px;">
     <?php foreach ( $tpl_qs as $qi => $q ) :
         $bg = $qi % 2 === 0 ? '#fff' : $light; ?>
@@ -512,7 +548,7 @@ a{text-decoration:none;}
     <?php endforeach; ?>
   </table>
   <div style="background:<?php echo $primary; ?>;color:#fff;border-radius:6px;padding:12px 16px;font-size:12.5px;line-height:1.7;">
-    <strong>Bu soruların tamamına net bir yanıt veriyoruz:</strong> <?php echo esc_html($co); ?> olarak tüm süreci sizin adınıza yönetiyor, sadece sonuçları size teslim ediyoruz.
+    <?php echo $answer_para; ?>
   </div>
 </div>
         <?php
@@ -587,16 +623,16 @@ a{text-decoration:none;}
   <table style="border:1px solid <?php echo $border; ?>;border-radius:6px;background:<?php echo $light; ?>;">
     <tr>
       <td style="padding:16px 20px;text-align:center;border-right:1px solid <?php echo $border; ?>;">
-        <div style="font-size:20px;font-weight:900;color:<?php echo $primary; ?>;">3 iş günü</div>
-        <div style="font-size:11px;color:#666;margin-top:3px;">rapor teslim süresi</div>
+        <div style="font-size:20px;font-weight:900;color:<?php echo $primary; ?>;"><?php echo esc_html($stat1_num); ?></div>
+        <div style="font-size:11px;color:#666;margin-top:3px;"><?php echo esc_html($stat1_label); ?></div>
       </td>
       <td style="padding:16px 20px;text-align:center;border-right:1px solid <?php echo $border; ?>;">
-        <div style="font-size:20px;font-weight:900;color:<?php echo $primary; ?>;">48 saat</div>
-        <div style="font-size:11px;color:#666;margin-top:3px;">teknik servis garantisi</div>
+        <div style="font-size:20px;font-weight:900;color:<?php echo $primary; ?>;"><?php echo esc_html($stat2_num); ?></div>
+        <div style="font-size:11px;color:#666;margin-top:3px;"><?php echo esc_html($stat2_label); ?></div>
       </td>
       <td style="padding:16px 20px;text-align:center;">
-        <div style="font-size:20px;font-weight:900;color:<?php echo $primary; ?>;">20+ yıl</div>
-        <div style="font-size:11px;color:#666;margin-top:3px;">sektör deneyimi</div>
+        <div style="font-size:20px;font-weight:900;color:<?php echo $primary; ?>;"><?php echo esc_html($stat3_num); ?></div>
+        <div style="font-size:11px;color:#666;margin-top:3px;"><?php echo esc_html($stat3_label); ?></div>
       </td>
     </tr>
   </table>
@@ -608,8 +644,8 @@ a{text-decoration:none;}
         extract( $ctx ); ?>
 <div style="padding:14px 30px 16px;">
   <div style="background:#fff;border:1px solid <?php echo $border; ?>;border-radius:6px;padding:14px 18px;font-size:12.5px;color:#444;line-height:1.7;">
-    <strong style="color:<?php echo $primary; ?>;">&#128197; Yılda En Az 1 Kez &mdash; Yüz Yüze Hizmet Değerlendirmesi</strong><br>
-    Yılda en az bir kez site yönetimiyle yüz yüze veya çevrimiçi toplantı düzenliyoruz. Hizmet kalitesi gözden geçirilir, varsa şikayetler ve iyileştirme önerileri birlikte ele alınır.
+    <strong style="color:<?php echo $primary; ?>;">&#128197; <?php echo esc_html($annual_title); ?></strong><br>
+    <?php echo esc_html($annual_body); ?>
   </div>
 </div>
         <?php
@@ -658,26 +694,15 @@ a{text-decoration:none;}
   <div class="section-title" style="margin-bottom:12px;">Güvencelerimiz</div>
   <table>
     <tr>
-      <td style="padding:8px 16px 8px 0;font-size:12px;width:25%;vertical-align:top;">
-        <div style="font-size:16px;">&#127963;</div>
-        <div style="font-weight:700;font-size:12px;margin-top:4px;">Bakanlık Onaylı</div>
-        <div style="font-size:11px;color:#666;">Yetkili Ölçüm Şirketi</div>
+      <?php
+      $gv_icons = ['&#127963;','&#127942;','&#128197;','&#128188;'];
+      foreach ($gv as $gi => $g): $sep = $gi > 0 ? 'border-left:1px solid ' . $border . ';' : ''; ?>
+      <td style="padding:8px <?php echo $gi===3?'0':'16px'; ?> 8px <?php echo $gi===0?'0':'16px'; ?>;font-size:12px;width:25%;vertical-align:top;<?php echo $sep; ?>">
+        <div style="font-size:16px;"><?php echo $gv_icons[$gi]; ?></div>
+        <div style="font-weight:700;font-size:12px;margin-top:4px;"><?php echo esc_html($g[0]); ?></div>
+        <div style="font-size:11px;color:#666;"><?php echo esc_html($g[1]); ?></div>
       </td>
-      <td style="padding:8px 16px;font-size:12px;width:25%;vertical-align:top;border-left:1px solid <?php echo $border; ?>;">
-        <div style="font-size:16px;">&#127942;</div>
-        <div style="font-weight:700;font-size:12px;margin-top:4px;">ISO 9001</div>
-        <div style="font-size:11px;color:#666;">Sertifikalı Hizmet Süreçleri</div>
-      </td>
-      <td style="padding:8px 16px;font-size:12px;width:25%;vertical-align:top;border-left:1px solid <?php echo $border; ?>;">
-        <div style="font-size:16px;">&#128197;</div>
-        <div style="font-weight:700;font-size:12px;margin-top:4px;">Teklif Geçerlilik</div>
-        <div style="font-size:11px;color:#666;"><?php echo $validity; ?> Gün</div>
-      </td>
-      <td style="padding:8px 0 8px 16px;font-size:12px;width:25%;vertical-align:top;border-left:1px solid <?php echo $border; ?>;">
-        <div style="font-size:16px;">&#128188;</div>
-        <div style="font-weight:700;font-size:12px;margin-top:4px;">20+ Yıllık</div>
-        <div style="font-size:11px;color:#666;">Sektör Deneyimi</div>
-      </td>
+      <?php endforeach; ?>
     </tr>
   </table>
 </div>
@@ -688,9 +713,11 @@ a{text-decoration:none;}
         extract( $ctx ); ?>
 <div style="padding:0 30px;">
   <div style="background:<?php echo $primary; ?>;border-radius:8px;padding:18px 22px;color:#fff;">
-    <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Sonraki Adım &mdash; Birlikte Başlayalım</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;"><?php echo esc_html($cta_title); ?></div>
     <div style="font-size:12.5px;opacity:.9;line-height:1.7;margin-bottom:12px;">
+      <?php if ($cta_body_tpl): echo esc_html( str_replace('[GEÇERLİLİK]', $validity, $cta_body_tpl) ); else: ?>
       Bu sezonu sorunsuz kapatmak istiyorsanız, <strong>teklifi <?php echo $validity; ?> gün içinde onaylayarak hemen başlayabilirsiniz.</strong>
+      <?php endif; ?>
     </div>
     <table><tr>
       <?php if ($tel1 || $tel2) : ?>
@@ -723,7 +750,7 @@ a{text-decoration:none;}
   </tr>
 </table>
 <div style="padding:8px 30px;text-align:center;font-size:10px;color:#aaa;">
-  Sözleşmeye dönüşen teklifler iptal edilemez. <?php echo $kdv_notu; ?>
+  <?php echo esc_html($dipnot); ?> <?php echo $kdv_notu; ?>
 </div>
         <?php
     }

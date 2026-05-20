@@ -765,6 +765,8 @@ class QuotePress_Settings {
             'ig_annual_title','ig_annual_body',
             'ig_cta_title','ig_cta_body',
             'ig_badge1','ig_badge2','ig_badge3','ig_badge4',
+            'ig_gv1_title','ig_gv1_sub','ig_gv2_title','ig_gv2_sub',
+            'ig_gv3_title','ig_gv3_sub','ig_gv4_title','ig_gv4_sub',
             'ig_price_note','ig_guarantee_note',
         ];
         foreach ( $fields_ig as $f ) {
@@ -777,6 +779,26 @@ class QuotePress_Settings {
         }
 
         update_option( 'quotepress_templates', $tpl );
+
+        // Save section ordering / visibility if provided
+        foreach ( [ 'ig', 'std' ] as $type ) {
+            $raw = wp_unslash( $_POST[ $type . '_section_order' ] ?? '' );
+            if ( ! $raw ) continue;
+            $decoded = json_decode( $raw, true );
+            if ( ! is_array( $decoded ) ) continue;
+            $clean = [];
+            foreach ( $decoded as $s ) {
+                if ( ! is_array($s) || empty($s['key']) ) continue;
+                $clean[] = [
+                    'key'    => sanitize_key( $s['key'] ),
+                    'label'  => sanitize_text_field( $s['label']  ?? '' ),
+                    'hidden' => (bool)( $s['hidden'] ?? false ),
+                    'locked' => (bool)( $s['locked'] ?? false ),
+                ];
+            }
+            if ( $clean ) QuotePress_Template_Builder::save_template( $type, $clean );
+        }
+
         wp_redirect( admin_url( 'admin.php?page=quotepress-templates&saved=1' ) );
         exit;
     }
@@ -788,260 +810,357 @@ class QuotePress_Settings {
 
     /* ── Şablon sayfası ─────────────────────────────────────── */
     public static function render_templates_page() {
-        $saved = isset($_GET['saved']);
-        $t = fn($k, $d='') => esc_textarea( self::get_tpl($k, $d) );
-        $v = fn($k, $d='') => esc_attr( self::get_tpl($k, $d) );
+        wp_enqueue_script( 'jquery-ui-sortable' );
+
+        $saved   = isset($_GET['saved']);
+        $t       = fn($k, $d='') => esc_textarea( self::get_tpl($k, $d) );
+        $v       = fn($k, $d='') => esc_attr( self::get_tpl($k, $d) );
+        $c       = self::active_theme_colors();
+        $primary = esc_attr( $c['primary'] );
+        $light   = esc_attr( $c['light'] );
+        $border  = esc_attr( $c['border'] );
+
+        $ig_secs  = QuotePress_Template_Builder::get_template('ig');
+        $std_secs = QuotePress_Template_Builder::get_template('std');
+        $editors  = ['badge_strip','intro_letter','commitment_cards','stats_strip','annual_meeting','guarantees','cta'];
+
+        $badge_defs = [
+            ['icon'=>'✓','text'=>'20+ Yıl Tecrübe'],
+            ['icon'=>'✓','text'=>'Bakanlık Onaylı Yetkili Ölçüm Şirketi'],
+            ['icon'=>'✓','text'=>'ISO 9001 Sertifikalı'],
+            ['icon'=>'✓','text'=>'Sıfır Sorun Garantisi'],
+        ];
+        $card_defs = [
+            ['3','İŞ GÜNÜ','3 İş Günü Rapor Teslimi','Fatura gelir, rapor hazır olur.','Doğalgaz faturasını bize iletmenizden itibaren en geç 3 iş günü içinde tüm bağımsız bölümlere ait ısı gider paylaşım raporları eksiksiz biçimde hazırlanarak size teslim edilir. Bekleme yok, gecikme yok.'],
+            ['PDF','EXCEL · ÇIKTI','Çok Formatlı Dijital Raporlama','Kağıt değil, akıllı raporlama.','Paylaşım sonuçları PDF, Excel ve yazdırmaya hazır çıktı formatında; hem tüm site için toplu hem de her bağımsız bölüm için ayrı ayrı hazırlanır. Dağıtım tamamen elektronik ortamda gerçekleşir.'],
+            ['48','SAAT','48 Saat Teknik Servis','Arıza bildirimi = 48 saat içinde çözüm.','Sayaç arızası veya yerinde müdahale gerektiren her durumda teknik ekibimiz, bildirimin alınmasından itibaren en geç 48 saat içinde sahada.'],
+            ['7/24','ERİŞİM','Web Paneli ile Tam Şeffaflık','Her daire kendi tüketimini görür.','Web paneli üzerinden site yönetimi ve her bağımsız bölüm sakini anlık tüketim verilerini 7/24 görüntüleyebilir.'],
+            ['100%','UYUM','Yasal Mevzuata Tam Uyum','Ceza riski sıfır, uyumluluk tam.','Tüm hesaplamalar, T.C. Çevre, Şehircilik ve İklim Değişikliği Bakanlığı\'nın Isı Gider Paylaşım Yönetmeliği çerçevesinde eksiksiz yürütülür.'],
+            ['ISO','9001','Güvenli Arşiv ve Anında Erişim','Hiçbir veri kaybolmaz.','Tüm okuma verileri ve paylaşım raporları yasal saklama sürelerine uygun olarak güvenli dijital ortamda arşivlenir.'],
+        ];
         ?>
         <style>
+        :root{--qp-primary:<?php echo $primary; ?>;--qp-light:<?php echo $light; ?>;--qp-border:<?php echo $border; ?>;}
         .qpt-wrap{max-width:900px;}
-        .qpt-tabs{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:24px;}
-        .qpt-tab{padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;}
-        .qpt-tab.active{color:#1a6eb5;border-bottom-color:#1a6eb5;}
+        .qpt-tabs{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:20px;}
+        .qpt-tab{padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;}
+        .qpt-tab.active{color:var(--qp-primary);border-bottom-color:var(--qp-primary);}
         .qpt-panel{display:none;} .qpt-panel.active{display:block;}
-        .qpt-section{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:18px 20px;margin-bottom:16px;}
-        .qpt-section h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1a6eb5;margin:0 0 14px;padding-bottom:8px;border-bottom:1px solid #e8f0fb;}
-        .qpt-row{display:grid;gap:10px;margin-bottom:10px;}
-        .qpt-row.cols-2{grid-template-columns:1fr 1fr;}
-        .qpt-row.cols-3{grid-template-columns:80px 1fr 1fr;}
-        .qpt-row.cols-5{grid-template-columns:70px 100px 1fr 1fr 2fr;}
-        .qpt-row label{font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:3px;}
-        .qpt-row input,.qpt-row textarea{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:12px;font-family:inherit;}
-        .qpt-row textarea{resize:vertical;min-height:60px;}
-        .qpt-card-group{border:1px solid #e8f0fb;border-radius:8px;padding:12px;margin-bottom:10px;background:#f8fbff;}
-        .qpt-card-num{font-size:22px;font-weight:900;color:#1a6eb5;text-align:center;padding:4px 0;}
-        .qpt-hint{font-size:11px;color:#aaa;margin:2px 0 0;font-style:italic;}
-        .qpt-save-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #e2e8f0;padding:14px 0;margin-top:24px;display:flex;gap:10px;align-items:center;}
-        .qpt-save-btn{background:#1a6eb5;color:#fff;border:none;border-radius:7px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;}
-        .qpt-save-btn:hover{background:#155e99;}
+        .qpt-info{background:var(--qp-light);border:1px solid var(--qp-border);border-radius:8px;padding:11px 15px;font-size:12px;color:#555;margin-bottom:16px;line-height:1.7;}
+        /* ── Section list ── */
+        .qptl-list{list-style:none;margin:0;padding:0 0 4px;}
+        .qptl-item{background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:7px;overflow:hidden;transition:box-shadow .15s;}
+        .qptl-item.ui-sortable-helper{box-shadow:0 6px 22px rgba(0,0,0,.13);z-index:9999;}
+        .qptl-placeholder{border:2px dashed var(--qp-border)!important;background:var(--qp-light)!important;border-radius:8px;margin-bottom:7px;height:50px;visibility:visible!important;list-style:none;}
+        .qptl-item.hidden-sec > .qptl-row .qptl-label{text-decoration:line-through;color:#aaa;}
+        .qptl-item.hidden-sec > .qptl-row{opacity:.55;}
+        .qptl-row{display:flex;align-items:center;gap:10px;padding:11px 14px;}
+        .qptl-handle{font-size:18px;color:#ccc;cursor:grab;flex-shrink:0;user-select:none;line-height:1;}
+        .qptl-handle:active{cursor:grabbing;}
+        .qptl-num{min-width:22px;height:22px;border-radius:50%;background:var(--qp-primary);color:#fff;font-size:11px;font-weight:700;text-align:center;line-height:22px;flex-shrink:0;}
+        .qptl-label{flex:1;font-size:13px;font-weight:600;color:#333;}
+        .qptl-locked{background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
+        .qptl-auto{font-size:11px;color:#bbb;flex-shrink:0;}
+        .qptl-vis-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:14px;cursor:pointer;flex-shrink:0;transition:background .12s,border-color .12s;line-height:1;}
+        .qptl-vis-btn:hover{background:var(--qp-light);border-color:var(--qp-primary);}
+        .qptl-edit-btn{background:var(--qp-light);border:1px solid var(--qp-border);border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;color:#444;flex-shrink:0;transition:background .12s,color .12s;}
+        .qptl-edit-btn:hover,.qptl-edit-btn.open{background:var(--qp-primary);color:#fff;border-color:var(--qp-primary);}
+        .qptl-editor{background:#f8fbff;border-top:1px solid #e8edf5;padding:16px 18px;}
+        /* ── Editor fields ── */
+        .qpted-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--qp-primary);margin:0 0 10px;}
+        .qpted-hint{font-size:11px;color:#aaa;font-style:italic;margin:2px 0 8px;}
+        .qpted-row{display:grid;gap:8px;margin-bottom:10px;align-items:start;}
+        .qpted-row.cols-2{grid-template-columns:1fr 1fr;}
+        .qpted-row.cols-5{grid-template-columns:60px 90px 1fr 1fr 2fr;}
+        .qpted-row label{font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:3px;}
+        .qpted-row input,.qpted-row textarea{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;font-size:12px;font-family:inherit;box-sizing:border-box;}
+        .qpted-row textarea{resize:vertical;min-height:54px;}
+        .qpted-card{border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff;}
+        .qpted-card-lbl{font-size:11px;font-weight:700;color:var(--qp-primary);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;}
+        /* ── Save bar ── */
+        .qpt-save-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #e2e8f0;padding:14px 0;margin-top:4px;display:flex;gap:10px;align-items:center;}
+        .qpt-save-btn{background:var(--qp-primary);color:#fff;border:none;border-radius:7px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;}
+        .qpt-save-btn:hover{opacity:.85;}
         .qpt-saved{color:#16a34a;font-weight:600;font-size:13px;}
         </style>
 
         <div class="qpt-wrap wrap">
           <h1 style="margin-bottom:4px;">📝 Teklif Şablonları</h1>
-          <p style="color:#666;font-size:13px;margin-bottom:20px;">PDF tekliflerinde görünen tüm metinleri buradan özelleştirin. Boş bırakılan alanlar varsayılan metni kullanır.</p>
+          <p style="color:#666;font-size:13px;margin-bottom:18px;">Bölümleri <strong>sürükleyerek</strong> sıralayın, 👁 ile gizleyin, <strong>▼ Düzenle</strong> ile içeriğini özelleştirin.</p>
 
           <?php if ($saved): ?><div class="notice notice-success is-dismissible"><p>✓ Şablon kaydedildi.</p></div><?php endif; ?>
 
-          <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+          <form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>">
             <input type="hidden" name="action" value="qp_save_templates">
+            <input type="hidden" name="ig_section_order"  id="qpt-ig-order"  value="<?php echo esc_attr( json_encode($ig_secs) ); ?>">
+            <input type="hidden" name="std_section_order" id="qpt-std-order" value="<?php echo esc_attr( json_encode($std_secs) ); ?>">
             <?php wp_nonce_field('qp_save_templates'); ?>
 
-            <!-- SEKME BAŞLIKLARI -->
             <div class="qpt-tabs">
               <button type="button" class="qpt-tab active" onclick="qptTab('ig',this)">🔥 Isı Gider Paylaşım</button>
               <button type="button" class="qpt-tab" onclick="qptTab('std',this)">📄 Standart Kompakt</button>
             </div>
 
-            <!-- ISI GİDER ŞABLONU -->
+            <!-- IG PANEL -->
             <div class="qpt-panel active" id="qpt-ig">
-
-              <div class="qpt-section">
-                <h3>Giriş Mektubu</h3>
-                <div class="qpt-row">
-                  <label>Giriş paragrafı</label>
-                  <textarea name="ig_intro_text" rows="3" placeholder="[MÜŞTERİ]&#039;nin ısı gider paylaşım süreçleri için [ŞİRKET]&#039;ye gösterdiğiniz ilgiye teşekkür ederiz..."><?php echo $t('ig_intro_text'); ?></textarea>
-                  <p class="qpt-hint">[MÜŞTERİ] = firma adı, [ŞİRKET] = şirket adınız/web adresiniz</p>
+              <div class="qpt-info">≡ Sürükle &nbsp;·&nbsp; 👁 Gizle/Göster &nbsp;·&nbsp; <strong>▼ Düzenle</strong> ile içeriği özelleştir &nbsp;·&nbsp; 🔒 kilitli bölümler zorunludur</div>
+              <ul class="qptl-list" id="qptl-ig">
+              <?php
+              $icons_arr = ['✓','✔','★','⭐','🏆','🎯','🔒','💎','🛡️','📋','🔧','⚡','🌟','💡','🏅'];
+              $stat_nums  = ['3 iş günü','48 saat','20+ yıl'];
+              $stat_labels = ['rapor teslim süresi','teknik servis garantisi','sektör deneyimi'];
+              $def_qs2 = [
+                  'Bağımsız bölümlere düşen ısı gideri payı nasıl hesaplanacak, sakinler itiraz ederse ne olacak?',
+                  'Fatura geldiğinde hesapları kim yapacak, raporları kim dağıtacak?',
+                  'Arıza yapan sayaçlar nasıl takip edilecek, yasal yükümlülükler yerine getirilecek mi?',
+              ];
+              $tpl_data = get_option('quotepress_templates', []);
+              $saved_qs = [];
+              for ($qi=1; $qi<=10; $qi++) {
+                  $qv = $tpl_data['ig_q'.$qi] ?? '';
+                  if ($qi<=3) { $saved_qs[] = $qv ?: ($def_qs2[$qi-1]??''); }
+                  elseif ($qv) { $saved_qs[] = $qv; }
+              }
+              if (empty($saved_qs)) $saved_qs = $def_qs2;
+              $num = 0;
+              foreach ( $ig_secs as $sec ) :
+                  $key    = $sec['key'];
+                  $label  = $sec['label'];
+                  $hidden = ! empty( $sec['hidden'] );
+                  $locked = ! empty( $sec['locked'] );
+                  $has_ed = in_array( $key, $editors, true );
+                  $num++;
+              ?>
+              <li class="qptl-item<?php echo $hidden ? ' hidden-sec' : ''; ?>"
+                  data-key="<?php echo esc_attr($key); ?>"
+                  data-label="<?php echo esc_attr($label); ?>"
+                  data-hidden="<?php echo $hidden ? 'true' : 'false'; ?>"
+                  data-locked="<?php echo $locked ? 'true' : 'false'; ?>">
+                <div class="qptl-row">
+                  <span class="qptl-handle" title="Sürükle">≡</span>
+                  <span class="qptl-num"><?php echo $num; ?></span>
+                  <span class="qptl-label"><?php echo esc_html($label); ?></span>
+                  <?php if ($locked): ?>
+                    <span class="qptl-locked">🔒 Zorunlu</span>
+                  <?php else: ?>
+                    <button type="button" class="qptl-vis-btn" onclick="qptlToggleVis(this,'ig')" title="Gizle/Göster"><?php echo $hidden ? '🙈' : '👁'; ?></button>
+                  <?php endif; ?>
+                  <?php if ($has_ed): ?>
+                    <button type="button" class="qptl-edit-btn" onclick="qptlToggleEdit(this)">▼ Düzenle</button>
+                  <?php else: ?>
+                    <span class="qptl-auto">Otomatik</span>
+                  <?php endif; ?>
                 </div>
-                <div class="qpt-row">
-                  <label>Cevap kutusu metni</label>
-                  <textarea name="ig_answer_text" rows="2" placeholder="Bu soruların tamamına net bir yanıt veriyoruz..."><?php echo $t('ig_answer_text'); ?></textarea>
-                </div>
-              </div>
+                <?php if ($has_ed): ?>
+                <div class="qptl-editor" style="display:none;">
+                <?php switch ($key):
+                  case 'badge_strip': ?>
+                    <div class="qpted-title">Rozet Şeridi</div>
+                    <p class="qpted-hint">✓ yerine emoji kullanabilirsiniz. Boş bırakılan rozetler gösterilmez.</p>
+                    <?php for ($bi=1; $bi<=4; $bi++):
+                        $b_icon = self::get_tpl('ig_badge'.$bi.'_icon', $badge_defs[$bi-1]['icon']);
+                        $b_text = self::get_tpl('ig_badge'.$bi, $badge_defs[$bi-1]['text']); ?>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                      <select name="ig_badge<?php echo $bi; ?>_icon" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 7px;font-size:13px;width:60px;">
+                        <?php foreach ($icons_arr as $ico) echo '<option value="'.esc_attr($ico).'" '.($b_icon===$ico?'selected':'').'>'.esc_html($ico).'</option>'; ?>
+                      </select>
+                      <input type="text" name="ig_badge<?php echo $bi; ?>" value="<?php echo esc_attr($b_text); ?>" placeholder="Rozet <?php echo $bi; ?> metni..." style="flex:1;border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;font-size:12px;">
+                    </div>
+                    <?php endfor; break;
 
-              <div class="qpt-section">
-                <h3>Müşteri Soruları <span style="font-size:10px;font-weight:400;color:#aaa;">(artırılabilir/azaltılabilir)</span></h3>
-                <div id="qpt-questions-list">
-                  <?php
-                  $def_qs = [
-                      'Bağımsız bölümlere düşen ısı gideri payı nasıl hesaplanacak, sakinler itiraz ederse ne olacak?',
-                      'Fatura geldiğinde hesapları kim yapacak, raporları kim dağıtacak?',
-                      'Arıza yapan sayaçlar nasıl takip edilecek, yasal yükümlülükler yerine getirilecek mi?',
-                  ];
-                  $tpl_data = get_option('quotepress_templates', []);
-                  $saved_qs = [];
-                  for ($qi = 1; $qi <= 10; $qi++) {
-                      $v_q = $tpl_data['ig_q'.$qi] ?? '';
-                      if ($qi <= 3) { $saved_qs[] = $v_q ?: ($def_qs[$qi-1] ?? ''); }
-                      elseif ($v_q) { $saved_qs[] = $v_q; }
-                  }
-                  if (empty($saved_qs)) $saved_qs = $def_qs;
-                  foreach ($saved_qs as $qi => $qv):
-                  ?>
-                  <div class="qpt-q-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
-                    <input type="text" name="ig_questions[]" value="<?php echo esc_attr($qv); ?>" style="flex:1;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:12px;" placeholder="Soru metni...">
-                    <button type="button" class="qpb danger" onclick="qptRemoveQ(this)" style="padding:5px 8px;flex-shrink:0;">✕</button>
-                  </div>
-                  <?php endforeach; ?>
-                </div>
-                <button type="button" onclick="qptAddQ()" style="margin-top:4px;background:#fff;border:1px dashed #93c5fd;border-radius:6px;padding:5px 14px;font-size:12px;color:#1a6eb5;cursor:pointer;font-weight:600;">+ Soru Ekle</button>
-                <p class="qpt-hint">Boş bırakılan sorular gösterilmez. Sırayı değiştirmek için sürükleyebilirsiniz.</p>
-              </div>
+                  case 'intro_letter': ?>
+                    <div class="qpted-title">Giriş Mektubu</div>
+                    <div class="qpted-row">
+                      <label>Giriş paragrafı &nbsp;<em style="font-weight:400;color:#aaa;">[MÜŞTERİ] = firma adı, [ŞİRKET] = şirket adı</em></label>
+                      <textarea name="ig_intro_text" rows="3" placeholder="[MÜŞTERİ]'nin ısı gider paylaşım süreçleri için [ŞİRKET]'ye gösterdiğiniz ilgiye teşekkür ederiz..."><?php echo $t('ig_intro_text'); ?></textarea>
+                    </div>
+                    <div class="qpted-row">
+                      <label>Cevap kutusu metni</label>
+                      <textarea name="ig_answer_text" rows="2" placeholder="Bu soruların tamamına net bir yanıt veriyoruz..."><?php echo $t('ig_answer_text'); ?></textarea>
+                    </div>
+                    <div class="qpted-title" style="margin-top:12px;">Müşteri Soruları</div>
+                    <div id="qpt-questions-list">
+                      <?php foreach ($saved_qs as $qv): ?>
+                      <div class="qpt-q-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+                        <input type="text" name="ig_questions[]" value="<?php echo esc_attr($qv); ?>" placeholder="Soru metni..." style="flex:1;border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;font-size:12px;">
+                        <button type="button" onclick="qptRemoveQ(this)" style="padding:4px 8px;border:1px solid #fca5a5;background:#fef2f2;border-radius:6px;color:#dc2626;cursor:pointer;flex-shrink:0;">✕</button>
+                      </div>
+                      <?php endforeach; ?>
+                    </div>
+                    <button type="button" onclick="qptAddQ()" style="margin-top:4px;background:#fff;border:1px dashed #93c5fd;border-radius:6px;padding:5px 14px;font-size:12px;color:var(--qp-primary);cursor:pointer;font-weight:600;">+ Soru Ekle</button>
+                    <?php break;
 
-              <div class="qpt-section">
-                <h3>Rozet Şeridi</h3>
-                <p class="qpt-hint" style="margin-bottom:12px;">Her rozet için ikon ve metin seçin. ✓ yerine emoji kullanabilirsiniz.</p>
-                <?php
-                $badge_defaults = [
-                    ['icon'=>'✓','text'=>'20+ Yıl Tecrübe'],
-                    ['icon'=>'✓','text'=>'Bakanlık Onaylı Yetkili Ölçüm Şirketi'],
-                    ['icon'=>'✓','text'=>'ISO 9001 Sertifikalı'],
-                    ['icon'=>'✓','text'=>'Sıfır Sorun Garantisi'],
-                ];
-                $tpl_data2 = get_option('quotepress_templates', []);
-                for ($bi=1;$bi<=4;$bi++):
-                    $b_icon = $tpl_data2['ig_badge'.$bi.'_icon'] ?? ($badge_defaults[$bi-1]['icon']??'✓');
-                    $b_text = $tpl_data2['ig_badge'.$bi] ?? ($badge_defaults[$bi-1]['text']??'');
-                ?>
-                <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                  <select name="ig_badge<?php echo $bi; ?>_icon" style="border:1px solid #d1d5db;border-radius:6px;padding:7px 8px;font-size:14px;width:70px;text-align:center;">
+                  case 'commitment_cards': ?>
+                    <div class="qpted-title">Taahhüt Kartları</div>
+                    <?php foreach ($card_defs as $ci => $dc): $n = $ci+1; ?>
+                    <div class="qpted-card">
+                      <div class="qpted-card-lbl">Kart <?php echo $n; ?></div>
+                      <div class="qpted-row cols-5">
+                        <div><label>Sayı</label><input name="ig_card<?php echo $n; ?>_num"   value="<?php echo $v("ig_card{$n}_num"); ?>"   placeholder="<?php echo esc_attr($dc[0]); ?>"></div>
+                        <div><label>Birim</label><input name="ig_card<?php echo $n; ?>_unit"  value="<?php echo $v("ig_card{$n}_unit"); ?>"  placeholder="<?php echo esc_attr($dc[1]); ?>"></div>
+                        <div><label>Başlık</label><input name="ig_card<?php echo $n; ?>_title" value="<?php echo $v("ig_card{$n}_title"); ?>" placeholder="<?php echo esc_attr($dc[2]); ?>"></div>
+                        <div><label>Alt başlık</label><input name="ig_card<?php echo $n; ?>_sub"   value="<?php echo $v("ig_card{$n}_sub"); ?>"   placeholder="<?php echo esc_attr($dc[3]); ?>"></div>
+                        <div><label>İçerik</label><textarea name="ig_card<?php echo $n; ?>_body" rows="2" placeholder="<?php echo esc_attr(mb_strimwidth($dc[4],0,50,'…')); ?>"><?php echo $t("ig_card{$n}_body"); ?></textarea></div>
+                      </div>
+                    </div>
+                    <?php endforeach; break;
+
+                  case 'stats_strip': ?>
+                    <div class="qpted-title">İstatistik Şeridi</div>
+                    <?php for ($si=1; $si<=3; $si++): ?>
+                    <div class="qpted-row cols-2" style="margin-bottom:8px;">
+                      <div><label>İstat <?php echo $si; ?> — Rakam/Metin</label><input name="ig_stat<?php echo $si; ?>_num"   value="<?php echo $v("ig_stat{$si}_num"); ?>"   placeholder="<?php echo esc_attr($stat_nums[$si-1]); ?>"></div>
+                      <div><label>İstat <?php echo $si; ?> — Açıklama</label><input   name="ig_stat<?php echo $si; ?>_label" value="<?php echo $v("ig_stat{$si}_label"); ?>" placeholder="<?php echo esc_attr($stat_labels[$si-1]); ?>"></div>
+                    </div>
+                    <?php endfor; break;
+
+                  case 'annual_meeting': ?>
+                    <div class="qpted-title">Yıllık Toplantı Kutusu</div>
+                    <div class="qpted-row">
+                      <label>Başlık</label>
+                      <input name="ig_annual_title" value="<?php echo $v('ig_annual_title'); ?>" placeholder="Yılda En Az 1 Kez — Yüz Yüze Hizmet Değerlendirmesi">
+                    </div>
+                    <div class="qpted-row">
+                      <label>Metin</label>
+                      <textarea name="ig_annual_body" rows="2" placeholder="Yılda en az bir kez site yönetimiyle yüz yüze veya çevrimiçi toplantı düzenliyoruz..."><?php echo $t('ig_annual_body'); ?></textarea>
+                    </div>
+                    <?php break;
+
+                  case 'guarantees': ?>
+                    <div class="qpted-title">Güvence İkonları (4 kutu)</div>
                     <?php
-                    $icons = ['✓','✔','★','⭐','🏆','🎯','🔒','💎','🛡️','📋','🔧','⚡','🌟','💡','🏅'];
-                    foreach ($icons as $ico) echo '<option value="'.esc_attr($ico).'" '.($b_icon===$ico?'selected':'').'>'.esc_html($ico).'</option>';
-                    ?>
-                  </select>
-                  <input type="text" name="ig_badge<?php echo $bi; ?>" value="<?php echo esc_attr($b_text); ?>" style="flex:1;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:12px;" placeholder="Rozet <?php echo $bi; ?> metni...">
-                </div>
-                <?php endfor; ?>
-              </div>
+                    $gv_defs = [
+                        ['Bakanlık Onaylı','Yetkili Ölçüm Şirketi'],
+                        ['ISO 9001','Sertifikalı Hizmet Süreçleri'],
+                        ['Teklif Geçerlilik','N Gün'],
+                        ['20+ Yıllık','Sektör Deneyimi'],
+                    ];
+                    for ($gi=1; $gi<=4; $gi++): ?>
+                    <div class="qpted-row cols-2" style="margin-bottom:8px;">
+                      <div><label>Güvence <?php echo $gi; ?> — Başlık</label><input name="ig_gv<?php echo $gi; ?>_title" value="<?php echo $v("ig_gv{$gi}_title"); ?>" placeholder="<?php echo esc_attr($gv_defs[$gi-1][0]); ?>"></div>
+                      <div><label>Güvence <?php echo $gi; ?> — Alt</label><input     name="ig_gv<?php echo $gi; ?>_sub"   value="<?php echo $v("ig_gv{$gi}_sub"); ?>"   placeholder="<?php echo esc_attr($gv_defs[$gi-1][1]); ?>"></div>
+                    </div>
+                    <?php endfor; break;
 
-              <div class="qpt-section">
-                <h3>Taahhüt Kartları</h3>
-                <?php
-                $default_cards = [
-                    ['3','İŞ GÜNÜ','3 İş Günü Rapor Teslimi','Fatura gelir, rapor hazır olur.','Doğalgaz faturasını bize iletmenizden itibaren en geç 3 iş günü içinde tüm bağımsız bölümlere ait ısı gider paylaşım raporları eksiksiz biçimde hazırlanarak size teslim edilir. Bekleme yok, gecikme yok.'],
-                    ['PDF','EXCEL · ÇIKTI','Çok Formatlı Dijital Raporlama','Kağıt değil, akıllı raporlama.','Paylaşım sonuçları PDF, Excel ve yazdırmaya hazır çıktı formatında; hem tüm site için toplu hem de her bağımsız bölüm için ayrı ayrı hazırlanır. Dağıtım tamamen elektronik ortamda gerçekleşir.'],
-                    ['48','SAAT','48 Saat Teknik Servis','Arıza bildirimi = 48 saat içinde çözüm.','Sayaç arızası veya yerinde müdahale gerektiren her durumda teknik ekibimiz, bildirimin alınmasından itibaren en geç 48 saat içinde sahada.'],
-                    ['7/24','ERİŞİM','Web Paneli ile Tam Şeffaflık','Her daire kendi tüketimini görür.','Web paneli üzerinden site yönetimi ve her bağımsız bölüm sakini anlık tüketim verilerini 7/24 görüntüleyebilir.'],
-                    ['100%','UYUM','Yasal Mevzuata Tam Uyum','Ceza riski sıfır, uyumluluk tam.','Tüm hesaplamalar, T.C. Çevre, Şehircilik ve İklim Değişikliği Bakanlığı nın Isı Gider Paylaşım Yönetmeliği çerçevesinde eksiksiz yürütülür.'],
-                    ['ISO','9001','Güvenli Arşiv ve Anında Erişim','Hiçbir veri kaybolmaz.','Tüm okuma verileri ve paylaşım raporları yasal saklama sürelerine uygun olarak güvenli dijital ortamda arşivlenir.'],
-                ];
-                foreach ($default_cards as $ci => $dc):
-                    $n = $ci+1;
-                ?>
-                <div class="qpt-card-group">
-                  <div style="font-size:11px;font-weight:700;color:#1a6eb5;margin-bottom:8px;">KART <?php echo $n; ?></div>
-                  <div class="qpt-row cols-5">
-                    <div><label>Büyük Sayı/Kısalt.</label><input name="ig_card<?php echo $n; ?>_num" value="<?php echo $v("ig_card{$n}_num"); ?>" placeholder="<?php echo esc_attr($dc[0]); ?>"></div>
-                    <div><label>Birim</label><input name="ig_card<?php echo $n; ?>_unit" value="<?php echo $v("ig_card{$n}_unit"); ?>" placeholder="<?php echo esc_attr($dc[1]); ?>"></div>
-                    <div><label>Başlık</label><input name="ig_card<?php echo $n; ?>_title" value="<?php echo $v("ig_card{$n}_title"); ?>" placeholder="<?php echo esc_attr($dc[2]); ?>"></div>
-                    <div><label>Alt başlık (italik)</label><input name="ig_card<?php echo $n; ?>_sub" value="<?php echo $v("ig_card{$n}_sub"); ?>" placeholder="<?php echo esc_attr($dc[3]); ?>"></div>
-                    <div><label>İçerik metni</label><textarea name="ig_card<?php echo $n; ?>_body" rows="2" placeholder="<?php echo esc_attr(mb_strimwidth($dc[4],0,60,'…')); ?>"><?php echo $t("ig_card{$n}_body"); ?></textarea></div>
-                  </div>
+                  case 'cta': ?>
+                    <div class="qpted-title">Harekete Geçirici (CTA)</div>
+                    <div class="qpted-row">
+                      <label>CTA Başlık</label>
+                      <input name="ig_cta_title" value="<?php echo $v('ig_cta_title'); ?>" placeholder="Sonraki Adım — Birlikte Başlayalım">
+                    </div>
+                    <div class="qpted-row">
+                      <label>CTA Metin &nbsp;<em style="font-weight:400;color:#aaa;">[GEÇERLİLİK] = geçerlilik günü</em></label>
+                      <textarea name="ig_cta_body" rows="2" placeholder="Bu sezonu sorunsuz kapatmak istiyorsanız, teklifi [GEÇERLİLİK] gün içinde onaylayarak başlayabilirsiniz."><?php echo $t('ig_cta_body'); ?></textarea>
+                    </div>
+                    <div class="qpted-row">
+                      <label>Alt dipnot</label>
+                      <input name="ig_guarantee_note" value="<?php echo $v('ig_guarantee_note'); ?>" placeholder="Sözleşmeye dönüşen teklifler iptal edilemez.">
+                    </div>
+                    <?php break;
+                endswitch; ?>
                 </div>
-                <?php endforeach; ?>
-              </div>
-
-              <div class="qpt-section">
-                <h3>İstatistik Şeridi</h3>
-                <div class="qpt-row cols-2">
-                  <div><label>İstat. 1 Rakam</label><input name="ig_stat1_num" value="<?php echo $v('ig_stat1_num'); ?>" placeholder="3 iş günü"></div>
-                  <div><label>İstat. 1 Açıklama</label><input name="ig_stat1_label" value="<?php echo $v('ig_stat1_label'); ?>" placeholder="rapor teslim süresi"></div>
-                </div>
-                <div class="qpt-row cols-2">
-                  <div><label>İstat. 2 Rakam</label><input name="ig_stat2_num" value="<?php echo $v('ig_stat2_num'); ?>" placeholder="48 saat"></div>
-                  <div><label>İstat. 2 Açıklama</label><input name="ig_stat2_label" value="<?php echo $v('ig_stat2_label'); ?>" placeholder="teknik servis garantisi"></div>
-                </div>
-                <div class="qpt-row cols-2">
-                  <div><label>İstat. 3 Rakam</label><input name="ig_stat3_num" value="<?php echo $v('ig_stat3_num'); ?>" placeholder="20+ yıl"></div>
-                  <div><label>İstat. 3 Açıklama</label><input name="ig_stat3_label" value="<?php echo $v('ig_stat3_label'); ?>" placeholder="sektör deneyimi"></div>
-                </div>
-              </div>
-
-              <div class="qpt-section">
-                <h3>Yıllık Toplantı Kutusu</h3>
-                <div class="qpt-row">
-                  <label>Başlık</label>
-                  <input name="ig_annual_title" value="<?php echo $v('ig_annual_title'); ?>" placeholder="Yılda En Az 1 Kez — Yüz Yüze Hizmet Değerlendirmesi">
-                </div>
-                <div class="qpt-row">
-                  <label>Metin</label>
-                  <textarea name="ig_annual_body" rows="2" placeholder="Yılda en az bir kez site yönetimiyle yüz yüze veya çevrimiçi toplantı düzenliyoruz..."><?php echo $t('ig_annual_body'); ?></textarea>
-                </div>
-              </div>
-
-              <div class="qpt-section">
-                <h3>Güvence İkonları (4 kutu)</h3>
-                <div class="qpt-row cols-2">
-                  <div><label>Güvence 1 Başlık</label><input name="ig_gv1_title" value="<?php echo esc_attr(self::get_tpl('ig_gv1_title')); ?>" placeholder="Bakanlık Onaylı"></div>
-                  <div><label>Güvence 1 Alt</label><input name="ig_gv1_sub" value="<?php echo esc_attr(self::get_tpl('ig_gv1_sub')); ?>" placeholder="Yetkili Ölçüm Şirketi"></div>
-                </div>
-                <div class="qpt-row cols-2">
-                  <div><label>Güvence 2 Başlık</label><input name="ig_gv2_title" value="<?php echo esc_attr(self::get_tpl('ig_gv2_title')); ?>" placeholder="ISO 9001"></div>
-                  <div><label>Güvence 2 Alt</label><input name="ig_gv2_sub" value="<?php echo esc_attr(self::get_tpl('ig_gv2_sub')); ?>" placeholder="Sertifikalı Hizmet Süreçleri"></div>
-                </div>
-              </div>
-
-              <div class="qpt-section">
-                <h3>Harekete Geçirici (CTA) & Alt Dipnot</h3>
-                <div class="qpt-row">
-                  <label>CTA Başlık</label>
-                  <input name="ig_cta_title" value="<?php echo $v('ig_cta_title'); ?>" placeholder="Sonraki Adım — Birlikte Başlayalım">
-                </div>
-                <div class="qpt-row">
-                  <label>CTA Metin</label>
-                  <textarea name="ig_cta_body" rows="2" placeholder="Bu sezonu sorunsuz kapatmak istiyorsanız, teklifi [GEÇERLİLİK] gün içinde onaylayarak hemen başlayabilirsiniz."><?php echo $t('ig_cta_body'); ?></textarea>
-                  <p class="qpt-hint">[GEÇERLİLİK] = geçerlilik gün sayısı</p>
-                </div>
-                <div class="qpt-row">
-                  <label>Alt dipnot</label>
-                  <input name="ig_guarantee_note" value="<?php echo $v('ig_guarantee_note'); ?>" placeholder="Sözleşmeye dönüşen teklifler iptal edilemez.">
-                </div>
-              </div>
-
+                <?php endif; ?>
+              </li>
+              <?php endforeach; ?>
+              </ul>
             </div><!-- /#qpt-ig -->
 
-            <!-- STANDART ŞABLON -->
+            <!-- STD PANEL -->
             <div class="qpt-panel" id="qpt-std">
-              <div class="qpt-section">
-                <h3>Standart Kompakt Format</h3>
-                <p style="color:#555;font-size:13px;line-height:1.7;margin-bottom:12px;">
-                  Standart format; firma adı, logo, iletişim bilgileri ve ürün/fiyat tablosundan oluşur.
-                  Bu bilgiler <a href="<?php echo esc_url( admin_url('admin.php?page=quotepress-settings') ); ?>" style="color:#1a6eb5;font-weight:600;">Ayarlar sayfasından</a> otomatik alınır — burada ayrıca girilmesine gerek yoktur.
-                </p>
-                <div style="background:#f8fbff;border:1px solid #c0d8f0;border-radius:8px;padding:14px 18px;font-size:13px;color:#555;">
-                  <strong style="display:block;margin-bottom:8px;color:#1a6eb5;">Standart PDF içeriği:</strong>
-                  <ul style="margin:0;padding-left:18px;line-height:2;">
-                    <li>Firma adı &amp; logosu</li>
-                    <li>Teklif numarası &amp; tarihi</li>
-                    <li>Müşteri firma / iletişim kişisi</li>
-                    <li>Proje adı</li>
-                    <li>Ürün listesi (fiyatlar, KDV, genel toplam)</li>
-                    <li>Teklif notu (isteğe bağlı)</li>
-                    <li>Geçerlilik tarihi</li>
-                    <li>İletişim bloğu &amp; e-posta alt yazısı</li>
-                  </ul>
+              <div class="qpt-info">Standart format içerikleri Ayarlar sayfasından ve teklif verisinden otomatik gelir. Bölüm sırasını ve görünürlüğünü düzenleyebilirsiniz.</div>
+              <ul class="qptl-list" id="qptl-std">
+              <?php $num = 0; foreach ($std_secs as $sec):
+                  $key    = $sec['key'];
+                  $hidden = ! empty($sec['hidden']);
+                  $locked = ! empty($sec['locked']);
+                  $num++;
+              ?>
+              <li class="qptl-item<?php echo $hidden ? ' hidden-sec' : ''; ?>"
+                  data-key="<?php echo esc_attr($key); ?>"
+                  data-label="<?php echo esc_attr($sec['label']); ?>"
+                  data-hidden="<?php echo $hidden ? 'true' : 'false'; ?>"
+                  data-locked="<?php echo $locked ? 'true' : 'false'; ?>">
+                <div class="qptl-row">
+                  <span class="qptl-handle" title="Sürükle">≡</span>
+                  <span class="qptl-num"><?php echo $num; ?></span>
+                  <span class="qptl-label"><?php echo esc_html($sec['label']); ?></span>
+                  <?php if ($locked): ?>
+                    <span class="qptl-locked">🔒 Zorunlu</span>
+                  <?php else: ?>
+                    <button type="button" class="qptl-vis-btn" onclick="qptlToggleVis(this,'std')" title="Gizle/Göster"><?php echo $hidden ? '🙈' : '👁'; ?></button>
+                  <?php endif; ?>
+                  <span class="qptl-auto">Otomatik</span>
                 </div>
-              </div>
-            </div>
+              </li>
+              <?php endforeach; ?>
+              </ul>
+            </div><!-- /#qpt-std -->
 
             <div class="qpt-save-bar">
-              <button type="submit" class="qpt-save-btn">💾 Şablonu Kaydet</button>
+              <button type="submit" class="qpt-save-btn">💾 Kaydet</button>
               <?php if ($saved): ?><span class="qpt-saved">✓ Kaydedildi</span><?php endif; ?>
             </div>
           </form>
         </div>
 
         <script>
+        jQuery(function($) {
+            function makeSort(type) {
+                $('#qptl-' + type).sortable({
+                    handle: '.qptl-handle',
+                    placeholder: 'qptl-placeholder',
+                    stop: function() { updateNums(type); syncOrder(type); }
+                });
+            }
+            makeSort('ig'); makeSort('std');
+            updateNums('ig'); updateNums('std');
+        });
+        function updateNums(type) {
+            var i = 1;
+            document.querySelectorAll('#qptl-' + type + ' > li').forEach(function(li) {
+                li.querySelector('.qptl-num').textContent = i++;
+            });
+        }
+        function syncOrder(type) {
+            var items = [];
+            document.querySelectorAll('#qptl-' + type + ' > li').forEach(function(li) {
+                items.push({key:li.dataset.key, label:li.dataset.label, hidden:li.dataset.hidden==='true', locked:li.dataset.locked==='true'});
+            });
+            document.getElementById('qpt-' + type + '-order').value = JSON.stringify(items);
+        }
+        function qptlToggleVis(btn, type) {
+            var li = btn.closest('li');
+            var nowHidden = li.dataset.hidden !== 'true';
+            li.dataset.hidden = nowHidden ? 'true' : 'false';
+            li.classList.toggle('hidden-sec', nowHidden);
+            btn.textContent = nowHidden ? '🙈' : '👁';
+            syncOrder(type);
+        }
+        function qptlToggleEdit(btn) {
+            var ed = btn.closest('li').querySelector('.qptl-editor');
+            var open = ed.style.display !== 'none';
+            ed.style.display = open ? 'none' : 'block';
+            btn.classList.toggle('open', !open);
+            btn.textContent = open ? '▼ Düzenle' : '▲ Kapat';
+        }
         function qptAddQ() {
             var list = document.getElementById('qpt-questions-list');
             var row = document.createElement('div');
             row.className = 'qpt-q-row';
             row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px;';
-            row.innerHTML = '<input type="text" name="ig_questions[]" style="flex:1;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:12px;" placeholder="Soru metni...">'
-                          + '<button type="button" class="qpb danger" onclick="qptRemoveQ(this)" style="padding:5px 8px;flex-shrink:0;">&#10005;</button>';
+            row.innerHTML = '<input type="text" name="ig_questions[]" style="flex:1;border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;font-size:12px;" placeholder="Soru metni...">'
+                          + '<button type="button" onclick="qptRemoveQ(this)" style="padding:4px 8px;border:1px solid #fca5a5;background:#fef2f2;border-radius:6px;color:#dc2626;cursor:pointer;flex-shrink:0;">✕</button>';
             list.appendChild(row);
             row.querySelector('input').focus();
         }
         function qptRemoveQ(btn) {
             var list = document.getElementById('qpt-questions-list');
-            if (list.querySelectorAll('.qpt-q-row').length > 1) {
-                btn.closest('.qpt-q-row').remove();
-            }
+            if (list.querySelectorAll('.qpt-q-row').length > 1) btn.closest('.qpt-q-row').remove();
         }
         function qptTab(id, btn) {
             document.querySelectorAll('.qpt-panel').forEach(function(p){ p.classList.remove('active'); });
             document.querySelectorAll('.qpt-tab').forEach(function(b){ b.classList.remove('active'); });
-            document.getElementById('qpt-'+id).classList.add('active');
+            document.getElementById('qpt-' + id).classList.add('active');
             btn.classList.add('active');
         }
         </script>
